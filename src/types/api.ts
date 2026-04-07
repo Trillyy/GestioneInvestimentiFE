@@ -71,6 +71,8 @@ export interface AssetResponse {
   exchange: string | null
   active: boolean
   createdAt: string
+  lastPrice: number | null
+  lastPriceDate: string | null
   stockDetail: StockDetail | null
   etfDetail: EtfDetail | null
   bondDetail: BondDetail | null
@@ -107,6 +109,27 @@ export interface AssetCreateRequest {
   coingeckoId?: string
   network?: string
   tokenStandard?: string
+}
+
+// ─── Asset Detail ────────────────────────────────────────────────────────────
+
+export type PriceType = 'CLOSE' | 'OPEN' | 'ADJUSTED_CLOSE' | 'NAV'
+
+export interface PricePoint {
+  date: string
+  price: number
+  volume: number | null
+}
+
+export interface PriceChart {
+  week: PricePoint[]
+  month: PricePoint[]
+  year: PricePoint[]
+  custom: PricePoint[] | null
+}
+
+export interface AssetDetailResponse extends AssetResponse {
+  priceChart: PriceChart
 }
 
 // ─── ETF Holdings ─────────────────────────────────────────────────────────────

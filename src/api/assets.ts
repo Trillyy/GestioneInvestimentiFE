@@ -1,10 +1,12 @@
 import type {
   ApiResponse,
   AssetCreateRequest,
+  AssetDetailResponse,
   AssetResponse,
   EtfHoldingRequest,
   EtfHoldingResponse,
   PagedResponse,
+  PriceType,
 } from '@/types/api'
 import { apiClient } from './client'
 
@@ -18,6 +20,19 @@ export async function listAssets(page = 0, size = 20): Promise<ApiResponse<Paged
 
 export async function createAsset(payload: AssetCreateRequest): Promise<ApiResponse<AssetResponse>> {
   const { data } = await apiClient.post<ApiResponse<AssetResponse>>('/api/v1/assets', payload)
+  return data
+}
+
+export async function getAssetDetail(
+  assetId: number,
+  priceType: PriceType = 'CLOSE',
+  from?: string,
+  to?: string,
+): Promise<ApiResponse<AssetDetailResponse>> {
+  const { data } = await apiClient.get<ApiResponse<AssetDetailResponse>>(
+    `/api/v1/assets/${assetId}`,
+    { params: { priceType, ...(from && { from }), ...(to && { to }) } },
+  )
   return data
 }
 

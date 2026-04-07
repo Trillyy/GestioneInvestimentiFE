@@ -43,6 +43,14 @@ function getIssuer(asset: AssetResponse): string | null {
   return asset.etfDetail?.issuer ?? asset.bondDetail?.issuer ?? null
 }
 
+const TODAY = new Date().toISOString().slice(0, 10)
+
+function isPriceRecent(dateStr: string | null): boolean {
+  if (!dateStr) return false
+  const diff = (new Date(TODAY).getTime() - new Date(dateStr).getTime()) / 86_400_000
+  return diff <= 7
+}
+
 const ASSET_TYPE_VARIANT: Record<
   AssetType,
   'default' | 'secondary' | 'outline' | 'destructive'
@@ -122,7 +130,7 @@ export default function AssetsPage() {
       const q = search.toLowerCase()
       const issuer = getIssuer(a)?.toLowerCase() ?? ''
       return (
-        a.ticker.toLowerCase().includes(q) ||
+        (a.ticker ?? '').toLowerCase().includes(q) ||
         (a.isin ?? '').toLowerCase().includes(q) ||
         a.name.toLowerCase().includes(q) ||
         issuer.includes(q)
@@ -228,6 +236,7 @@ export default function AssetsPage() {
               <TableHead>Tipo</TableHead>
               <TableHead>Valuta</TableHead>
               <TableHead>Borsa</TableHead>
+              <TableHead>Ultimo Prezzo</TableHead>
               <TableHead>Stato</TableHead>
               <TableHead className="text-right">Azioni</TableHead>
             </TableRow>
@@ -235,20 +244,20 @@ export default function AssetsPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
                   Caricamento…
                 </TableCell>
               </TableRow>
             ) : pagedAssets.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
                   Nessun asset trovato
                 </TableCell>
               </TableRow>
             ) : (
               pagedAssets.map((asset) => (
                 <TableRow key={asset.id}>
-                  <TableCell className="font-mono font-medium">{asset.ticker}</TableCell>
+                  <TableCell className="font-mono font-medium">{asset.ticker ?? '—'}</TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">
                     {asset.isin ?? '—'}
                   </TableCell>
@@ -266,19 +275,44 @@ export default function AssetsPage() {
                   <TableCell>{asset.currencyCode}</TableCell>
                   <TableCell>{asset.exchange ?? '—'}</TableCell>
                   <TableCell>
+                    {(asset.assetType === 'ETF' || asset.assetType === 'FUND' || asset.assetType === 'BOND' || asset.assetType === 'CRYPTO') &&
+                    asset.lastPrice != null &&
+                    isPriceRecent(asset.lastPriceDate) ? (
+                      <span className="flex items-center gap-1.5">
+                        {asset.lastPriceDate === TODAY
+                          ? <span className="inline-block h-2 w-2 rounded-full bg-green-500 shrink-0" />
+                          : <span className="text-xs text-muted-foreground">{new Date(asset.lastPriceDate!).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}</span>
+                        }
+                        <span className="font-mono text-sm">
+                          {asset.lastPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <Badge variant={asset.active ? 'default' : 'outline'}>
                       {asset.active ? 'Attivo' : 'Inattivo'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    {(asset.assetType === 'ETF' || asset.assetType === 'FUND') && (
+                    <div className="flex items-center justify-end gap-2">
                       <Link
-                        to={`/assets/${asset.id}/holdings`}
+                        to={`/assets/${asset.id}`}
                         className={buttonVariants({ variant: 'outline', size: 'sm' })}
                       >
-                        Holdings
+                        Dettaglio
                       </Link>
-                    )}
+                      {(asset.assetType === 'ETF' || asset.assetType === 'FUND') && (
+                        <Link
+                          to={`/assets/${asset.id}/holdings`}
+                          className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                        >
+                          Holdings
+                        </Link>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
