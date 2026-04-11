@@ -232,6 +232,37 @@ export interface CurrencyPairDetailResponse extends CurrencyPairResponse {
   rateChart: RateChart
 }
 
+// ─── Portfolio Holdings ───────────────────────────────────────────────────────
+
+export interface PortfolioHoldingResponse {
+  id: number
+  portfolioId: number
+  portfolioName: string
+  assetId: number
+  assetName: string
+  ticker: string
+  isin: string | null
+  assetType: AssetType
+  currencyCode: string
+  quantityHeld: number
+  averageCost: number
+  totalInvested: number
+  lastPrice: number | null
+  lastPriceDate: string | null
+  unrealizedPnl: number | null
+  unrealizedPnlBase: number | null
+  unrealizedPnlPct: number | null
+  firstBuyDate: string | null
+  lastTransactionDate: string | null
+}
+
+export interface PortfolioHoldingsResponse {
+  holdings: PortfolioHoldingResponse[]
+  totalInvested: number
+  totalUnrealizedPnl: number
+  totalUnrealizedPnlPct: number
+}
+
 // ─── ETF Holdings ─────────────────────────────────────────────────────────────
 
 export interface HoldingItem {
