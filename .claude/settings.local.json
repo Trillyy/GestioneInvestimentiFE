@@ -16,11 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npm run lint"
-          },
-          {
-            "type": "command",
-            "command": "npm run typecheck"
+            "command": "npm run lint && npm run typecheck"
           }
         ]
       }
