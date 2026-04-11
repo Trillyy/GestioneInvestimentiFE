@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { TrendingUp, TrendingDown, Wallet } from 'lucide-react'
+import { TrendingUp, TrendingDown, Wallet, ExternalLink } from 'lucide-react'
 import { listHoldings } from '@/api/holdings'
 import { listPortfolios } from '@/api/portfolios'
 import { Combobox } from '@/components/ui/combobox'
@@ -198,13 +198,15 @@ export default function HomePage() {
               {holdings.map((h) => (
                 <TableRow key={h.id}>
                   <TableCell>
-                    <Link
-                      to={`/assets/${h.assetId}`}
-                      className="font-medium hover:underline"
-                    >
-                      {h.ticker}
-                    </Link>
-                    <p className="text-xs text-muted-foreground">{h.assetName}</p>
+                    <div className="flex gap-2">
+                      <p className="text-xs text-muted-foreground">{h.assetName}</p>
+                      <Link
+                          to={`/assets/${h.assetId}`}
+                          className="inline-flex items-center gap-0.5 text-xs text-primary hover:underline"
+                      >
+                        <ExternalLink className="size-3" />
+                      </Link>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary" className="text-xs">
