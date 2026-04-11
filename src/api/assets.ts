@@ -53,3 +53,8 @@ export async function saveHoldings(
   )
   return data
 }
+
+export async function syncPrices(): Promise<ApiResponse<number>> {
+  const { data } = await apiClient.post<ApiResponse<number>>('/api/v1/price-history/sync')
+  return data
+}

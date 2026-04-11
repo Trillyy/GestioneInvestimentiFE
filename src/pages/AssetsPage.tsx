@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { createAsset, listAssets } from '@/api/assets'
+import { createAsset, listAssets, syncPrices } from '@/api/assets'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -92,6 +92,7 @@ export default function AssetsPage() {
   const [loading, setLoading] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [syncing, setSyncing] = useState(false)
 
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<AssetType | 'ALL'>('ALL')
@@ -152,6 +153,21 @@ export default function AssetsPage() {
     setPage(0)
   }
 
+  // ─── Sync ────────────────────────────────────────────────────────────────
+
+  async function handleSync() {
+    setSyncing(true)
+    try {
+      const res = await syncPrices()
+      toast.success(`Sync completato: ${res.data} prezzi aggiornati`)
+      void fetchAssets()
+    } catch {
+      toast.error('Errore durante il sync dei prezzi')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   // ─── Submit ──────────────────────────────────────────────────────────────
 
   async function onSubmit(values: FormValues) {
@@ -193,7 +209,12 @@ export default function AssetsPage() {
               : `${allAssets.length} asset nel registro`}
           </p>
         </div>
-        <Button onClick={() => setSheetOpen(true)}>Nuovo Asset</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleSync} disabled={syncing}>
+            {syncing ? 'Sincronizzazione…' : 'Sincronizza Prezzi'}
+          </Button>
+          <Button onClick={() => setSheetOpen(true)}>Nuovo Asset</Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -275,7 +296,7 @@ export default function AssetsPage() {
                   <TableCell>{asset.currencyCode}</TableCell>
                   <TableCell>{asset.exchange ?? '—'}</TableCell>
                   <TableCell>
-                    {(asset.assetType === 'ETF' || asset.assetType === 'FUND' || asset.assetType === 'BOND' || asset.assetType === 'CRYPTO') &&
+                    {(asset.assetType === 'ETF' || asset.assetType === 'FUND' || asset.assetType === 'BOND' || asset.assetType === 'CRYPTO' || asset.assetType === 'STOCK') &&
                     asset.lastPrice != null &&
                     isPriceRecent(asset.lastPriceDate) ? (
                       <span className="flex items-center gap-1.5">
