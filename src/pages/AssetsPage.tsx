@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { createAsset, listAssets, syncPrices } from '@/api/assets'
+import { createAsset, listAssets, listSectors, syncPrices } from '@/api/assets'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -25,7 +25,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { buttonVariants } from '@/components/ui/button'
-import type { AssetCreateRequest, AssetResponse, AssetType } from '@/types/api'
+import { Combobox } from '@/components/ui/combobox'
+import type { AssetCreateRequest, AssetResponse, AssetType, CouponFrequency, SectorResponse } from '@/types/api'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -62,17 +63,6 @@ const ASSET_TYPE_VARIANT: Record<
   CRYPTO: 'destructive',
 }
 
-function selectCls(hasError = false) {
-  return [
-    'h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm',
-    'outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
-    'disabled:cursor-not-allowed disabled:opacity-50',
-    hasError && 'border-destructive',
-  ]
-    .filter(Boolean)
-    .join(' ')
-}
-
 // ─── Form types ───────────────────────────────────────────────────────────────
 
 type FormValues = Omit<AssetCreateRequest, 'sectorId' | 'heldAssetId'> & {
@@ -88,6 +78,7 @@ const PAGE_SIZE = 20
 
 export default function AssetsPage() {
   const [allAssets, setAllAssets] = useState<AssetResponse[]>([])
+  const [sectors, setSectors] = useState<SectorResponse[]>([])
   const [page, setPage] = useState(0)
   const [loading, setLoading] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -102,6 +93,7 @@ export default function AssetsPage() {
     handleSubmit,
     watch,
     reset,
+    control,
     formState: { errors },
   } = useForm<FormValues>({ defaultValues: { assetType: 'STOCK' } })
 
@@ -121,7 +113,10 @@ export default function AssetsPage() {
     }
   }
 
-  useEffect(() => { void fetchAssets() }, [])
+  useEffect(() => {
+    void fetchAssets()
+    listSectors().then((res) => setSectors(res.data)).catch(() => {})
+  }, [])
 
   // ─── Filter + paginate client-side ───────────────────────────────────────
 
@@ -225,16 +220,16 @@ export default function AssetsPage() {
           onChange={(e) => handleSearchChange(e.target.value)}
           className="max-w-sm"
         />
-        <select
+        <Combobox
           value={typeFilter}
-          onChange={(e) => handleTypeChange(e.target.value)}
-          className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          <option value="ALL">Tutti i tipi</option>
-          {ASSET_TYPES.map((t) => (
-            <option key={t} value={t}>{ASSET_TYPE_LABELS[t]}</option>
-          ))}
-        </select>
+          onChange={(val) => handleTypeChange(val || 'ALL')}
+          options={[
+            { value: 'ALL', label: 'Tutti i tipi' },
+            ...ASSET_TYPES.map((t) => ({ value: t, label: ASSET_TYPE_LABELS[t] })),
+          ]}
+          placeholder="Tutti i tipi"
+          className="w-44"
+        />
         {(search || typeFilter !== 'ALL') && (
           <Button
             variant="ghost"
@@ -385,14 +380,20 @@ export default function AssetsPage() {
           >
             {/* Tipo */}
             <div className="space-y-1.5">
-              <Label htmlFor="assetType">Tipo *</Label>
-              <select id="assetType" className={selectCls()} {...register('assetType', { required: true })}>
-                {ASSET_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {ASSET_TYPE_LABELS[t]}
-                  </option>
-                ))}
-              </select>
+              <Label>Tipo *</Label>
+              <Controller
+                name="assetType"
+                control={control}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <Combobox
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    options={ASSET_TYPES.map((t) => ({ value: t, label: ASSET_TYPE_LABELS[t] }))}
+                    hasError={!!errors.assetType}
+                  />
+                )}
+              />
             </div>
 
             {/* Campi comuni */}
@@ -463,8 +464,22 @@ export default function AssetsPage() {
                     <Input id="countryCode" placeholder="US" maxLength={2} {...register('countryCode')} />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="sectorId">ID Settore</Label>
-                    <Input id="sectorId" type="number" placeholder="1" {...register('sectorId')} />
+                    <Label>Settore</Label>
+                    <Controller
+                      name="sectorId"
+                      control={control}
+                      render={({ field }) => (
+                        <Combobox
+                          value={field.value ?? ''}
+                          onChange={field.onChange}
+                          options={[
+                            { value: '', label: '— Nessuno —' },
+                            ...sectors.map((s) => ({ value: String(s.id), label: s.name })),
+                          ]}
+                          placeholder="— Nessuno —"
+                        />
+                      )}
+                    />
                   </div>
                 </div>
               </>
@@ -484,33 +499,47 @@ export default function AssetsPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="replicationMethod">Metodo Replica *</Label>
-                    <select
-                      id="replicationMethod"
-                      className={selectCls(!!errors.replicationMethod)}
-                      {...register('replicationMethod', { required: 'Obbligatorio' })}
-                    >
-                      <option value="">— Seleziona —</option>
-                      <option value="PHYSICAL_FULL">Fisica completa</option>
-                      <option value="PHYSICAL_SAMPLING">Fisica a campione</option>
-                      <option value="SYNTHETIC">Sintetica</option>
-                    </select>
+                    <Label>Metodo Replica *</Label>
+                    <Controller
+                      name="replicationMethod"
+                      control={control}
+                      rules={{ required: 'Obbligatorio' }}
+                      render={({ field }) => (
+                        <Combobox
+                          value={field.value ?? ''}
+                          onChange={field.onChange}
+                          options={[
+                            { value: 'PHYSICAL_FULL', label: 'Fisica completa' },
+                            { value: 'PHYSICAL_SAMPLING', label: 'Fisica a campione' },
+                            { value: 'SYNTHETIC', label: 'Sintetica' },
+                          ]}
+                          hasError={!!errors.replicationMethod}
+                        />
+                      )}
+                    />
                     {errors.replicationMethod && (
                       <p className="text-xs text-destructive">{errors.replicationMethod.message}</p>
                     )}
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="distributionType">Distribuzione *</Label>
-                    <select
-                      id="distributionType"
-                      className={selectCls(!!errors.distributionType)}
-                      {...register('distributionType', { required: 'Obbligatorio' })}
-                    >
-                      <option value="">— Seleziona —</option>
-                      <option value="ACCUMULATING">Accumulazione</option>
-                      <option value="DISTRIBUTING">Distribuzione</option>
-                    </select>
+                    <Label>Distribuzione *</Label>
+                    <Controller
+                      name="distributionType"
+                      control={control}
+                      rules={{ required: 'Obbligatorio' }}
+                      render={({ field }) => (
+                        <Combobox
+                          value={field.value ?? ''}
+                          onChange={field.onChange}
+                          options={[
+                            { value: 'ACCUMULATING', label: 'Accumulazione' },
+                            { value: 'DISTRIBUTING', label: 'Distribuzione' },
+                          ]}
+                          hasError={!!errors.distributionType}
+                        />
+                      )}
+                    />
                     {errors.distributionType && (
                       <p className="text-xs text-destructive">{errors.distributionType.message}</p>
                     )}
@@ -580,14 +609,25 @@ export default function AssetsPage() {
                   </div>
 
                   <div className="space-y-1.5 col-span-2">
-                    <Label htmlFor="couponFrequency">Frequenza Cedola</Label>
-                    <select id="couponFrequency" className={selectCls()} {...register('couponFrequency', { valueAsNumber: true })}>
-                      <option value="">— Seleziona —</option>
-                      <option value={1}>Annuale (1/anno)</option>
-                      <option value={2}>Semestrale (2/anno)</option>
-                      <option value={4}>Trimestrale (4/anno)</option>
-                      <option value={12}>Mensile (12/anno)</option>
-                    </select>
+                    <Label>Frequenza Cedola</Label>
+                    <Controller
+                      name="couponFrequency"
+                      control={control}
+                      render={({ field }) => (
+                        <Combobox
+                          value={field.value != null ? String(field.value) : ''}
+                          onChange={(val) => field.onChange(val ? (Number(val) as CouponFrequency) : undefined)}
+                          options={[
+                            { value: '', label: '— Seleziona —' },
+                            { value: '1', label: 'Annuale (1/anno)' },
+                            { value: '2', label: 'Semestrale (2/anno)' },
+                            { value: '4', label: 'Trimestrale (4/anno)' },
+                            { value: '12', label: 'Mensile (12/anno)' },
+                          ]}
+                          placeholder="— Seleziona —"
+                        />
+                      )}
+                    />
                   </div>
 
                   <div className="space-y-1.5 col-span-2 flex items-center gap-2">

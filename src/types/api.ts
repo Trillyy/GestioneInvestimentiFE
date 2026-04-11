@@ -133,6 +133,68 @@ export interface AssetDetailResponse extends AssetResponse {
   priceChart: PriceChart
 }
 
+// ─── Portfolios ───────────────────────────────────────────────────────────────
+
+export interface PortfolioResponse {
+  id: number
+  name: string
+  description: string | null
+  currencyCode: string
+  active: boolean
+}
+
+// ─── Sectors ──────────────────────────────────────────────────────────────────
+
+export interface SectorResponse {
+  id: number
+  code: string
+  name: string
+}
+
+// ─── Transactions ─────────────────────────────────────────────────────────────
+
+export type TransactionType =
+  | 'BUY' | 'SELL' | 'DIVIDEND' | 'INTEREST'
+  | 'SPLIT' | 'TRANSFER_IN' | 'TRANSFER_OUT' | 'FEE'
+
+export interface TransactionResponse {
+  id: number
+  portfolioId: number
+  portfolioName: string
+  assetId: number | null
+  assetName: string | null
+  assetTicker: string | null
+  assetIsin: string | null
+  assetType: AssetType | null
+  transactionType: TransactionType
+  transactionDate: string
+  quantity: number
+  unitPrice: number | null
+  totalAmount: number
+  fees: number
+  currencyCode: string
+  exchangeRateToBase: number
+  realizedPnl: number | null
+  realizedPnlBase: number | null
+  avgCostBasisAtSale: number | null
+  notes: string | null
+  createdAt: string
+}
+
+export interface TransactionCreateRequest {
+  portfolioId: number
+  assetId?: number
+  transactionType: TransactionType
+  transactionDate: string
+  quantity?: number
+  unitPrice?: number
+  totalAmount: number
+  fees?: number
+  currencyCode: string
+  exchangeRateToBase?: number
+  notes?: string
+}
+
 // ─── Exchange Rates ───────────────────────────────────────────────────────────
 
 export interface CurrencyPairResponse {

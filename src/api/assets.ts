@@ -7,6 +7,7 @@ import type {
   EtfHoldingResponse,
   PagedResponse,
   PriceType,
+  SectorResponse,
 } from '@/types/api'
 import { apiClient } from './client'
 
@@ -52,6 +53,16 @@ export async function saveHoldings(
     `/api/v1/assets/${assetId}/holdings`,
     payload,
   )
+  return data
+}
+
+export async function listAllAssets(): Promise<ApiResponse<AssetResponse[]>> {
+  const { data } = await apiClient.get<ApiResponse<AssetResponse[]>>('/api/v1/assets/all')
+  return data
+}
+
+export async function listSectors(): Promise<ApiResponse<SectorResponse[]>> {
+  const { data } = await apiClient.get<ApiResponse<SectorResponse[]>>('/api/v1/sectors')
   return data
 }
 

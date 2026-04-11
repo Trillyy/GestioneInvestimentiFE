@@ -5,6 +5,7 @@ import { genericParser, iSharesParser, franklinTempletonParser, xtrackersParser,
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, Legend } from 'recharts'
 import { getHoldings, listAssets, saveHoldings } from '@/api/assets'
 import { Button, buttonVariants } from '@/components/ui/button'
+import { Combobox } from '@/components/ui/combobox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
@@ -269,16 +270,11 @@ export default function EtfHoldingsPage() {
               {/* Issuer selector */}
               <div className="space-y-1.5">
                 <Label htmlFor="issuer">Emittente</Label>
-                <select
-                  id="issuer"
+                <Combobox
                   value={issuerId}
-                  onChange={(e) => handleIssuerChange(e.target.value)}
-                  className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                >
-                  {Object.entries(PARSERS).map(([key, p]) => (
-                    <option key={key} value={key}>{p.label}</option>
-                  ))}
-                </select>
+                  onChange={handleIssuerChange}
+                  options={Object.entries(PARSERS).map(([key, p]) => ({ value: key, label: p.label }))}
+                />
               </div>
 
               {/* Date — read-only when auto-extracted */}

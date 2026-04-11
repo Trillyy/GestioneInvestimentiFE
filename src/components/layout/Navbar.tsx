@@ -5,6 +5,7 @@ const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/assets', label: 'Asset' },
   { to: '/exchange-rates', label: 'Cambi' },
+  { to: '/transactions', label: 'Transazioni' },
 ]
 
 export default function Navbar() {

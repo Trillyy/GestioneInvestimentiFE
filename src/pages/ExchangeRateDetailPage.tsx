@@ -21,12 +21,13 @@ import type { CurrencyPairDetailResponse, RatePoint } from '@/types/api'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-type RateWindow = 'week' | 'month' | 'year' | 'custom'
+type RateWindow = 'week' | 'month' | 'year' | 'ytd' | 'custom'
 
 const WINDOW_LABELS: Record<RateWindow, string> = {
   week: 'Sett.',
   month: 'Mese',
   year: 'Anno',
+  ytd: 'YTD',
   custom: 'Personalizzato',
 }
 
@@ -129,7 +130,16 @@ export default function ExchangeRateDetailPage() {
 
   async function handleWindowChange(w: RateWindow) {
     setWindow(w)
-    if (w === 'custom') return
+    if (w === 'ytd') {
+      const today = new Date()
+      const jan1 = `${today.getFullYear()}-01-01`
+      const todayStr = today.toISOString().slice(0, 10)
+      setCustomLoading(true)
+      try { await fetchDetail({ from: jan1, to: todayStr }) }
+      finally { setCustomLoading(false) }
+    } else if (w === 'custom') {
+      return
+    }
     // week/month/year are pre-fetched in the response, no extra call needed
   }
 
@@ -235,7 +245,7 @@ export default function ExchangeRateDetailPage() {
           <CardTitle className="text-base">Storico Tassi di Cambio</CardTitle>
 
           <div className="flex gap-1 mt-2 flex-wrap">
-            {(['week', 'month', 'year', 'custom'] as RateWindow[]).map((w) => (
+            {(['week', 'month', 'year', 'ytd', 'custom'] as RateWindow[]).map((w) => (
               <Button
                 key={w}
                 variant={window === w ? 'default' : 'outline'}

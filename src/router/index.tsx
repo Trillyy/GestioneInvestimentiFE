@@ -6,6 +6,7 @@ import AssetDetailPage from '@/pages/AssetDetailPage'
 import EtfHoldingsPage from '@/pages/EtfHoldingsPage'
 import ExchangeRatesPage from '@/pages/ExchangeRatesPage'
 import ExchangeRateDetailPage from '@/pages/ExchangeRateDetailPage'
+import TransactionsPage from '@/pages/TransactionsPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 export const router = createBrowserRouter([
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
       { path: 'assets/:id/holdings', element: <EtfHoldingsPage /> },
       { path: 'exchange-rates', element: <ExchangeRatesPage /> },
       { path: 'exchange-rates/:id', element: <ExchangeRateDetailPage /> },
+      { path: 'transactions', element: <TransactionsPage /> },
     ],
   },
   { path: '*', element: <NotFoundPage /> },
