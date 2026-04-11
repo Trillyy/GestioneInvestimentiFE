@@ -12,7 +12,7 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Edit:*.ts|Edit:*.tsx",
+        "matcher": "Write|Edit|MultiEdit",
         "hooks": [
           {
             "type": "command",

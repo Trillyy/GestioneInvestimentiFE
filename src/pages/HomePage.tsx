@@ -147,7 +147,7 @@ export default function HomePage() {
           icon={Wallet}
         />
         <StatCard
-          title="P&L Non Realizzato (EUR)"
+          title="P&L Non Realizzato"
           value={`${pnlPositive ? '+' : ''}${fmtCurrency(totalPnl)}`}
           positive={pnlPositive}
           icon={pnlPositive ? TrendingUp : TrendingDown}
