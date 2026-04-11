@@ -163,6 +163,6 @@ export {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
+  navigationMenuTriggerStyle, // eslint-disable-line react-refresh/only-export-components
   NavigationMenuPositioner,
 }

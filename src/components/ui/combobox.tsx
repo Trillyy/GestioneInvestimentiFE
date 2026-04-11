@@ -45,7 +45,6 @@ export function Combobox({
 
   useEffect(() => {
     if (open) {
-      setSearch('')
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect()
         setDropdownStyle({
@@ -88,7 +87,7 @@ export function Combobox({
         ref={triggerRef}
         type="button"
         disabled={disabled}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setSearch(''); setOpen((v) => !v) }}
         onKeyDown={handleKeyDown}
         className={cn(
           'flex h-8 w-full items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors',
