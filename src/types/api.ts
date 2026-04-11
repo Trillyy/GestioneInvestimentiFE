@@ -129,7 +129,45 @@ export interface PriceChart {
 }
 
 export interface AssetDetailResponse extends AssetResponse {
+  displayCurrencyCode: string
   priceChart: PriceChart
+}
+
+// ─── Exchange Rates ───────────────────────────────────────────────────────────
+
+export interface CurrencyPairResponse {
+  id: number
+  baseCurrencyCode: string
+  baseCurrencyName: string
+  baseCurrencySymbol: string
+  quoteCurrencyCode: string
+  quoteCurrencyName: string
+  quoteCurrencySymbol: string
+  active: boolean
+  yahooSymbol: string
+  lastRate: number | null
+  lastRateDate: string | null
+}
+
+export interface CurrencyPairCreateRequest {
+  baseCurrencyCode: string
+  quoteCurrencyCode: string
+}
+
+export interface RatePoint {
+  date: string
+  rate: number
+}
+
+export interface RateChart {
+  week: RatePoint[]
+  month: RatePoint[]
+  year: RatePoint[]
+  custom: RatePoint[] | null
+}
+
+export interface CurrencyPairDetailResponse extends CurrencyPairResponse {
+  rateChart: RateChart
 }
 
 // ─── ETF Holdings ─────────────────────────────────────────────────────────────

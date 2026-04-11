@@ -28,10 +28,11 @@ export async function getAssetDetail(
   priceType: PriceType = 'CLOSE',
   from?: string,
   to?: string,
+  currency?: string,
 ): Promise<ApiResponse<AssetDetailResponse>> {
   const { data } = await apiClient.get<ApiResponse<AssetDetailResponse>>(
     `/api/v1/assets/${assetId}`,
-    { params: { priceType, ...(from && { from }), ...(to && { to }) } },
+    { params: { priceType, ...(from && { from }), ...(to && { to }), ...(currency && { currency }) } },
   )
   return data
 }

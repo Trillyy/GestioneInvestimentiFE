@@ -160,10 +160,13 @@ export default function AssetDetailPage() {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [customLoading, setCustomLoading] = useState(false)
+  const [displayCurrency, setDisplayCurrency] = useState('EUR')
+  const [currencyInput, setCurrencyInput] = useState('EUR')
 
-  async function fetchDetail(opts?: { from?: string; to?: string }) {
+  async function fetchDetail(opts?: { from?: string; to?: string; currency?: string }) {
+    const currency = opts?.currency !== undefined ? opts.currency : displayCurrency
     try {
-      const res = await getAssetDetail(assetId, priceType, opts?.from, opts?.to)
+      const res = await getAssetDetail(assetId, priceType, opts?.from, opts?.to, currency || undefined)
       setAsset(res.data)
     } catch {
       toast.error('Errore nel caricamento del dettaglio')
@@ -207,6 +210,28 @@ export default function AssetDetailPage() {
     }
   }
 
+  async function handleCurrencyApply() {
+    const newCurrency = currencyInput.trim().toUpperCase()
+    setDisplayCurrency(newCurrency)
+    setCustomLoading(true)
+    try {
+      await fetchDetail({ currency: newCurrency })
+    } finally {
+      setCustomLoading(false)
+    }
+  }
+
+  async function handleCurrencyReset() {
+    setCurrencyInput('')
+    setDisplayCurrency('')
+    setCustomLoading(true)
+    try {
+      await fetchDetail({ currency: '' })
+    } finally {
+      setCustomLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">
@@ -223,6 +248,7 @@ export default function AssetDetailPage() {
       : (asset.priceChart.custom ?? [])
 
   const issuer = asset.etfDetail?.issuer ?? asset.bondDetail?.issuer ?? null
+  const TODAY = new Date().toISOString().slice(0, 10)
 
   return (
     <div className="space-y-6">
@@ -257,14 +283,30 @@ export default function AssetDetailPage() {
             </Badge>
           </div>
         </div>
-        {(asset.assetType === 'ETF' || asset.assetType === 'FUND') && (
-          <Link
-            to={`/assets/${asset.id}/holdings`}
-            className="text-sm text-primary hover:underline whitespace-nowrap"
-          >
-            Vedi Holdings →
-          </Link>
-        )}
+        <div className="flex flex-col items-end gap-2">
+          {asset.lastPrice != null && (
+            <div className="text-right">
+              <div className="text-2xl font-mono font-semibold">
+                {asset.lastPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                <span className="text-sm font-normal text-muted-foreground ml-1.5">{asset.displayCurrencyCode}</span>
+              </div>
+              <div className="text-xs text-muted-foreground flex items-center justify-end gap-1.5 mt-0.5">
+                {asset.lastPriceDate === TODAY && (
+                  <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+                )}
+                Aggiornato {formatDate(asset.lastPriceDate)}
+              </div>
+            </div>
+          )}
+          {(asset.assetType === 'ETF' || asset.assetType === 'FUND') && (
+            <Link
+              to={`/assets/${asset.id}/holdings`}
+              className="text-sm text-primary hover:underline whitespace-nowrap"
+            >
+              Vedi Holdings →
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* General Info */}
@@ -390,7 +432,29 @@ export default function AssetDetailPage() {
       {/* Price Chart */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Storico Prezzi (Chiusura Adj.)</CardTitle>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="text-base">Storico Prezzi (Chiusura Adj.)</CardTitle>
+            {/* Currency converter */}
+            <div className="flex items-center gap-1.5">
+              <Label className="text-xs text-muted-foreground whitespace-nowrap">Valuta:</Label>
+              <Input
+                value={currencyInput}
+                onChange={(e) => setCurrencyInput(e.target.value.toUpperCase())}
+                placeholder={asset.currencyCode}
+                maxLength={3}
+                className="h-7 w-16 text-xs font-mono uppercase px-2"
+                onKeyDown={(e) => { if (e.key === 'Enter') void handleCurrencyApply() }}
+              />
+              <Button size="xs" variant="outline" onClick={() => void handleCurrencyApply()} disabled={customLoading}>
+                Applica
+              </Button>
+              {displayCurrency && displayCurrency !== asset.currencyCode && (
+                <Button size="xs" variant="ghost" onClick={() => void handleCurrencyReset()} disabled={customLoading}>
+                  ×
+                </Button>
+              )}
+            </div>
+          </div>
 
           {/* Window tabs */}
           <div className="flex gap-1 mt-2 flex-wrap">

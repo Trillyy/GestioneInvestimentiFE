@@ -3,8 +3,8 @@ import { cn } from '@/lib/utils'
 
 const navLinks = [
   { to: '/', label: 'Home' },
-  { to: '/dashboard', label: 'Dashboard' },
   { to: '/assets', label: 'Asset' },
+  { to: '/exchange-rates', label: 'Cambi' },
 ]
 
 export default function Navbar() {
