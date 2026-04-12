@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 import { listAllAssets } from '@/api/assets'
 import { listPortfolios } from '@/api/portfolios'
 import { createTransaction, listTransactions } from '@/api/transactions'
+import { fmtDate, fmtNum } from '@/lib/formatters'
+import { TRANSACTION_TYPE_LABELS, TRANSACTION_TYPE_VARIANT, TRANSACTION_TYPES } from '@/lib/transactionTypes'
 import { Combobox } from '@/components/ui/combobox'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -29,41 +31,6 @@ import {
 import type { AssetResponse, PortfolioResponse, TransactionCreateRequest, TransactionResponse, TransactionType } from '@/types/api'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const TRANSACTION_TYPES: TransactionType[] = [
-  'BUY', 'SELL', 'DIVIDEND', 'INTEREST', 'SPLIT', 'TRANSFER_IN', 'TRANSFER_OUT', 'FEE',
-]
-
-const TX_TYPE_LABELS: Record<TransactionType, string> = {
-  BUY: 'Acquisto',
-  SELL: 'Vendita',
-  DIVIDEND: 'Dividendo',
-  INTEREST: 'Interesse',
-  SPLIT: 'Split',
-  TRANSFER_IN: 'Entrata',
-  TRANSFER_OUT: 'Uscita',
-  FEE: 'Commissione',
-}
-
-const TX_TYPE_VARIANT: Record<TransactionType, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-  BUY: 'default',
-  SELL: 'destructive',
-  DIVIDEND: 'secondary',
-  INTEREST: 'secondary',
-  SPLIT: 'outline',
-  TRANSFER_IN: 'secondary',
-  TRANSFER_OUT: 'outline',
-  FEE: 'outline',
-}
-
-function fmtNum(value: number | null | undefined, decimals = 2): string {
-  if (value == null) return '—'
-  return value.toLocaleString('it-IT', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
-}
-
-function fmtDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('it-IT')
-}
 
 // Types requiring asset selection
 const NEEDS_ASSET: TransactionType[] = ['BUY', 'SELL', 'DIVIDEND', 'INTEREST', 'SPLIT', 'TRANSFER_IN', 'TRANSFER_OUT']
@@ -288,8 +255,8 @@ export default function TransactionsPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={TX_TYPE_VARIANT[tx.transactionType]}>
-                      {TX_TYPE_LABELS[tx.transactionType]}
+                    <Badge variant={TRANSACTION_TYPE_VARIANT[tx.transactionType]}>
+                      {TRANSACTION_TYPE_LABELS[tx.transactionType]}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm">
@@ -364,7 +331,7 @@ export default function TransactionsPage() {
                     <Combobox
                       value={field.value ?? ''}
                       onChange={field.onChange}
-                      options={TRANSACTION_TYPES.map((t) => ({ value: t, label: TX_TYPE_LABELS[t] }))}
+                      options={TRANSACTION_TYPES.map((t) => ({ value: t, label: TRANSACTION_TYPE_LABELS[t] }))}
                       hasError={!!errors.transactionType}
                     />
                   )}

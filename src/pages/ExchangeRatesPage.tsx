@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { createCurrencyPair, listCurrencyPairs, syncExchangeRates } from '@/api/exchangeRates'
+import { isDateRecent, TODAY } from '@/lib/formatters'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -25,13 +26,6 @@ import {
 } from '@/components/ui/table'
 import type { CurrencyPairCreateRequest, CurrencyPairResponse } from '@/types/api'
 
-const TODAY = new Date().toISOString().slice(0, 10)
-
-function isRateRecent(dateStr: string | null): boolean {
-  if (!dateStr) return false
-  const diff = (new Date(TODAY).getTime() - new Date(dateStr).getTime()) / 86_400_000
-  return diff <= 7
-}
 
 const PAGE_SIZE = 20
 
@@ -207,7 +201,7 @@ export default function ExchangeRatesPage() {
                     {pair.quoteCurrencyName}
                   </TableCell>
                   <TableCell>
-                    {pair.lastRate != null && isRateRecent(pair.lastRateDate) ? (
+                    {pair.lastRate != null && isDateRecent(pair.lastRateDate) ? (
                       <span className="flex items-center gap-1.5">
                         {pair.lastRateDate === TODAY
                           ? <span className="inline-block h-2 w-2 rounded-full bg-green-500 shrink-0" />

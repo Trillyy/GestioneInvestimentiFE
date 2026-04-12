@@ -3,6 +3,8 @@ import { useForm, Controller } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { createAsset, listAssets, listSectors, syncPrices } from '@/api/assets'
+import { ASSET_TYPE_LABELS, ASSET_TYPE_VARIANT, ASSET_TYPES } from '@/lib/assetTypes'
+import { isDateRecent, TODAY } from '@/lib/formatters'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -30,37 +32,8 @@ import type { AssetCreateRequest, AssetResponse, AssetType, CouponFrequency, Sec
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const ASSET_TYPES: AssetType[] = ['STOCK', 'ETF', 'FUND', 'BOND', 'CRYPTO']
-
-const ASSET_TYPE_LABELS: Record<AssetType, string> = {
-  STOCK: 'Azione',
-  ETF: 'ETF',
-  FUND: 'Fondo',
-  BOND: 'Obbligazione',
-  CRYPTO: 'Criptovaluta',
-}
-
 function getIssuer(asset: AssetResponse): string | null {
   return asset.etfDetail?.issuer ?? asset.bondDetail?.issuer ?? null
-}
-
-const TODAY = new Date().toISOString().slice(0, 10)
-
-function isPriceRecent(dateStr: string | null): boolean {
-  if (!dateStr) return false
-  const diff = (new Date(TODAY).getTime() - new Date(dateStr).getTime()) / 86_400_000
-  return diff <= 7
-}
-
-const ASSET_TYPE_VARIANT: Record<
-  AssetType,
-  'default' | 'secondary' | 'outline' | 'destructive'
-> = {
-  STOCK: 'default',
-  ETF: 'secondary',
-  FUND: 'secondary',
-  BOND: 'outline',
-  CRYPTO: 'destructive',
 }
 
 // ─── Form types ───────────────────────────────────────────────────────────────
@@ -293,7 +266,7 @@ export default function AssetsPage() {
                   <TableCell>
                     {(asset.assetType === 'ETF' || asset.assetType === 'FUND' || asset.assetType === 'BOND' || asset.assetType === 'CRYPTO' || asset.assetType === 'STOCK') &&
                     asset.lastPrice != null &&
-                    isPriceRecent(asset.lastPriceDate) ? (
+                    isDateRecent(asset.lastPriceDate) ? (
                       <span className="flex items-center gap-1.5">
                         {asset.lastPriceDate === TODAY
                           ? <span className="inline-block h-2 w-2 rounded-full bg-green-500 shrink-0" />

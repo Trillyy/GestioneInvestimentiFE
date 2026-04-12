@@ -11,6 +11,8 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { getCurrencyPairDetail } from '@/api/exchangeRates'
+import { InfoRow } from '@/components/ui/info-row'
+import { type ChartWindow, fmtDate, TODAY, WINDOW_LABELS} from '@/lib/formatters'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -18,33 +20,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import type { CurrencyPairDetailResponse, RatePoint } from '@/types/api'
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-type RateWindow = 'week' | 'month' | 'year' | 'ytd' | 'custom'
-
-const WINDOW_LABELS: Record<RateWindow, string> = {
-  week: 'Sett.',
-  month: 'Mese',
-  year: 'Anno',
-  ytd: 'YTD',
-  custom: 'Personalizzato',
-}
-
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
-  if (value === null || value === undefined || value === '') return null
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="text-sm font-medium">{value}</span>
-    </div>
-  )
-}
-
-function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleDateString('it-IT')
-}
 
 // ─── Rate Chart ───────────────────────────────────────────────────────────────
 
@@ -108,7 +83,7 @@ export default function ExchangeRateDetailPage() {
 
   const [pair, setPair] = useState<CurrencyPairDetailResponse | null>(null)
   const [loading, setLoading] = useState(true)
-  const [window, setWindow] = useState<RateWindow>('month')
+  const [window, setWindow] = useState<ChartWindow>('month')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [customLoading, setCustomLoading] = useState(false)
@@ -128,7 +103,7 @@ export default function ExchangeRateDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pairId])
 
-  async function handleWindowChange(w: RateWindow) {
+  async function handleWindowChange(w: ChartWindow) {
     setWindow(w)
     if (w === 'ytd') {
       const today = new Date()
@@ -172,8 +147,6 @@ export default function ExchangeRateDetailPage() {
       ? pair.rateChart[window]
       : (pair.rateChart.custom ?? [])
 
-  const TODAY = new Date().toISOString().slice(0, 10)
-
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
@@ -212,7 +185,7 @@ export default function ExchangeRateDetailPage() {
               {pair.lastRateDate === TODAY && (
                 <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
               )}
-              Aggiornato {formatDate(pair.lastRateDate)}
+              Aggiornato {fmtDate(pair.lastRateDate)}
             </div>
           </div>
         )}
@@ -234,7 +207,7 @@ export default function ExchangeRateDetailPage() {
               label="Valuta Quotata"
               value={`${pair.quoteCurrencySymbol} ${pair.quoteCurrencyName} (${pair.quoteCurrencyCode})`}
             />
-            <InfoRow label="Ultimo Aggiornamento" value={formatDate(pair.lastRateDate)} />
+            <InfoRow label="Ultimo Aggiornamento" value={fmtDate(pair.lastRateDate)} />
           </div>
         </CardContent>
       </Card>
@@ -245,7 +218,7 @@ export default function ExchangeRateDetailPage() {
           <CardTitle className="text-base">Storico Tassi di Cambio</CardTitle>
 
           <div className="flex gap-1 mt-2 flex-wrap">
-            {(['week', 'month', 'year', 'ytd', 'custom'] as RateWindow[]).map((w) => (
+            {(['week', 'month', 'year', 'ytd', 'custom'] as ChartWindow[]).map((w) => (
               <Button
                 key={w}
                 variant={window === w ? 'default' : 'outline'}

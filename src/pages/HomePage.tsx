@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { TrendingUp, TrendingDown, Wallet, ExternalLink } from 'lucide-react'
 import { listHoldings } from '@/api/holdings'
 import { listPortfolios } from '@/api/portfolios'
+import { fmtCurrency, fmtNum, pnlColorClass } from '@/lib/formatters'
 import { ASSET_TYPE_LABELS, ASSET_TYPE_VARIANT, ASSET_TYPES } from '@/lib/assetTypes'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -24,23 +25,15 @@ import { cn } from '@/lib/utils'
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 
-function fmt(value: number, decimals = 2) {
-  return value.toLocaleString('it-IT', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
-}
-
-function fmtCurrency(value: number, currency = 'EUR') {
-  return value.toLocaleString('it-IT', { style: 'currency', currency, minimumFractionDigits: 2 })
-}
-
 function PnlCell({ value, pct }: { value: number | null; pct?: number | null }) {
   if (value == null) return <span className="text-muted-foreground">—</span>
   const positive = value >= 0
   return (
-    <span className={cn('font-mono font-medium', positive ? 'text-emerald-600' : 'text-red-500')}>
-      {positive ? '+' : ''}{fmt(value)} €
+    <span className={cn('font-mono font-medium', pnlColorClass(positive ? 1 : -1))}>
+      {positive ? '+' : ''}{fmtNum(value)} €
       {pct != null && (
         <span className="ml-1 text-xs opacity-75">
-          ({positive ? '+' : ''}{fmt(pct)}%)
+          ({positive ? '+' : ''}{fmtNum(pct)}%)
         </span>
       )}
     </span>
@@ -154,7 +147,7 @@ export default function HomePage() {
         />
         <StatCard
           title="P&L Non Realizzato %"
-          value={`${pnlPositive ? '+' : ''}${fmt(totalPnlPct)}%`}
+          value={`${pnlPositive ? '+' : ''}${fmtNum(totalPnlPct)}%`}
           sub="Sul capitale investito totale"
           positive={pnlPositive}
           icon={pnlPositive ? TrendingUp : TrendingDown}
@@ -245,18 +238,18 @@ export default function HomePage() {
                   </TableCell>
                   <TableCell className="text-sm">{h.portfolioName}</TableCell>
                   <TableCell className="text-right font-mono text-sm">
-                    {fmt(h.quantityHeld, 4)}
+                    {fmtNum(h.quantityHeld, 4)}
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm">
-                    {fmt(h.averageCost)} {h.currencyCode}
+                    {fmtNum(h.averageCost)} {h.currencyCode}
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm">
-                    {fmt(h.totalInvested)} {h.currencyCode}
+                    {fmtNum(h.totalInvested)} {h.currencyCode}
                   </TableCell>
                   <TableCell className="text-right font-mono text-sm">
                     {h.lastPrice != null ? (
                       <>
-                        {fmt(h.lastPrice)}
+                        {fmtNum(h.lastPrice)}
                         {h.lastPriceDate && (
                           <p className="text-xs text-muted-foreground">{h.lastPriceDate}</p>
                         )}

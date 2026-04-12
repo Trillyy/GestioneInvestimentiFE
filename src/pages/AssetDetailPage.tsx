@@ -14,6 +14,9 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 import { getAssetDetail } from '@/api/assets'
 import { getHoldingsByAsset } from '@/api/holdings'
 import { ASSET_TYPE_LABELS, ASSET_TYPE_VARIANT } from '@/lib/assetTypes'
+import { type ChartWindow, fmtDate, formatPct, formatSignedAmount, formatSignedPct, pnlColorClass, TODAY, WINDOW_LABELS } from '@/lib/formatters'
+import { TRANSACTION_TYPE_LABELS, TRANSACTION_TYPE_VARIANT } from '@/lib/transactionTypes'
+import { InfoRow } from '@/components/ui/info-row'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -27,7 +30,6 @@ import type {
   AssetType,
   PricePoint,
   PriceType,
-  TransactionType,
 } from '@/types/api'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -50,76 +52,8 @@ const COUPON_FREQ_LABELS: Record<number, string> = {
   12: 'Mensile',
 }
 
-type PriceWindow = 'week' | 'month' | 'year' | 'ytd' | 'alltime' | 'custom'
-
-const WINDOW_LABELS: Record<PriceWindow, string> = {
-  week: 'Sett.',
-  month: 'Mese',
-  year: 'Anno',
-  ytd: 'YTD',
-  alltime: 'Tutto',
-  custom: 'Personalizzato',
-}
 
 
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
-  if (value === null || value === undefined || value === '') return null
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="text-sm font-medium">{value}</span>
-    </div>
-  )
-}
-
-function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleDateString('it-IT')
-}
-
-function formatPct(value: number | null | undefined): string {
-  if (value === null || value === undefined) return '—'
-  return `${(value * 100).toFixed(2)}%`
-}
-
-const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
-  BUY: 'Acquisto',
-  SELL: 'Vendita',
-  DIVIDEND: 'Dividendo',
-  INTEREST: 'Interesse',
-  SPLIT: 'Split',
-  TRANSFER_IN: 'Trasf. Entrata',
-  TRANSFER_OUT: 'Trasf. Uscita',
-  FEE: 'Commissione',
-}
-
-const TRANSACTION_TYPE_VARIANT: Record<TransactionType, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-  BUY: 'default',
-  SELL: 'destructive',
-  DIVIDEND: 'secondary',
-  INTEREST: 'secondary',
-  SPLIT: 'outline',
-  TRANSFER_IN: 'outline',
-  TRANSFER_OUT: 'outline',
-  FEE: 'outline',
-}
-
-function pnlColorClass(val: number | null | undefined): string {
-  if (val == null || val === 0) return ''
-  return val > 0 ? 'text-emerald-600' : 'text-red-500'
-}
-
-function formatSignedAmount(value: number | null | undefined, currency: string): string {
-  if (value == null) return '—'
-  const sign = value > 0 ? '+' : ''
-  return `${sign}${value.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`
-}
-
-function formatSignedPct(value: number | null | undefined): string {
-  if (value == null) return '—'
-  const sign = value > 0 ? '+' : ''
-  return `${sign}${value.toFixed(2)}%`
-}
 
 // ─── Price Chart ──────────────────────────────────────────────────────────────
 
@@ -194,7 +128,7 @@ export default function AssetDetailPage() {
     })
   }
 
-  const [window, setWindow] = useState<PriceWindow>('month')
+  const [window, setWindow] = useState<ChartWindow>('month')
   const priceType: PriceType = 'ADJUSTED_CLOSE'
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
@@ -223,7 +157,7 @@ export default function AssetDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assetId])
 
-  async function handleWindowChange(w: PriceWindow) {
+  async function handleWindowChange(w: ChartWindow) {
     setWindow(w)
     if (w === 'ytd') {
       const today = new Date()
@@ -292,7 +226,6 @@ export default function AssetDetailPage() {
       : (asset.priceChart.custom ?? [])
 
   const issuer = asset.etfDetail?.issuer ?? asset.bondDetail?.issuer ?? null
-  const TODAY = new Date().toISOString().slice(0, 10)
 
   return (
     <div className="space-y-6">
@@ -338,7 +271,7 @@ export default function AssetDetailPage() {
                 {asset.lastPriceDate === TODAY && (
                   <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
                 )}
-                Aggiornato {formatDate(asset.lastPriceDate)}
+                Aggiornato {fmtDate(asset.lastPriceDate)}
               </div>
             </div>
           )}
@@ -362,7 +295,7 @@ export default function AssetDetailPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             <InfoRow label="Valuta" value={asset.currencyCode} />
             <InfoRow label="Borsa" value={asset.exchange ?? '—'} />
-            <InfoRow label="Registrato il" value={formatDate(asset.createdAt)} />
+            <InfoRow label="Registrato il" value={fmtDate(asset.createdAt)} />
           </div>
         </CardContent>
       </Card>
@@ -413,7 +346,7 @@ export default function AssetDetailPage() {
                 label="TER"
                 value={asset.etfDetail.ter != null ? formatPct(asset.etfDetail.ter) : '—'}
               />
-              <InfoRow label="Data lancio" value={formatDate(asset.etfDetail.inceptionDate)} />
+              <InfoRow label="Data lancio" value={fmtDate(asset.etfDetail.inceptionDate)} />
               <InfoRow label="Domicilio" value={asset.etfDetail.domicileCountryCode ?? '—'} />
             </div>
           </CardContent>
@@ -432,7 +365,7 @@ export default function AssetDetailPage() {
                 label="Paese"
                 value={asset.bondDetail.countryName ?? asset.bondDetail.countryCode ?? '—'}
               />
-              <InfoRow label="Scadenza" value={formatDate(asset.bondDetail.maturityDate)} />
+              <InfoRow label="Scadenza" value={fmtDate(asset.bondDetail.maturityDate)} />
               <InfoRow
                 label="Cedola"
                 value={asset.bondDetail.couponRate != null ? formatPct(asset.bondDetail.couponRate) : '—'}
@@ -480,7 +413,7 @@ export default function AssetDetailPage() {
             <CardTitle className="text-base">Posizione in Portafoglio</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {assetHoldings.map((item, i) => {
+            <>{assetHoldings.map((item, i) => {
               const h = item.holding
               const marketValue = h.lastPrice != null ? h.lastPrice * h.quantityHeld : null
               const hasPnl = item.transactions.some((t) => t.realizedPnl != null)
@@ -531,8 +464,8 @@ export default function AssetDetailPage() {
                         </span>
                       }
                     />
-                    <InfoRow label="Primo Acquisto" value={formatDate(h.firstBuyDate)} />
-                    <InfoRow label="Ultima Operazione" value={formatDate(h.lastTransactionDate)} />
+                    <InfoRow label="Primo Acquisto" value={fmtDate(h.firstBuyDate)} />
+                    <InfoRow label="Ultima Operazione" value={fmtDate(h.lastTransactionDate)} />
                   </div>
 
                   {/* Transactions */}
@@ -571,7 +504,7 @@ export default function AssetDetailPage() {
                               {item.transactions.map((t) => (
                                 <TableRow key={t.id}>
                                   <TableCell className="text-xs font-mono whitespace-nowrap">
-                                    {formatDate(t.transactionDate)}
+                                    {fmtDate(t.transactionDate)}
                                   </TableCell>
                                   <TableCell className="text-xs">
                                     <Badge variant={TRANSACTION_TYPE_VARIANT[t.transactionType]} className="text-xs">
@@ -618,7 +551,7 @@ export default function AssetDetailPage() {
                   {i < assetHoldings.length - 1 && <Separator className="mt-5" />}
                 </div>
               )
-            })}
+            })}</>
           </CardContent>
         </Card>
       )}
@@ -652,7 +585,7 @@ export default function AssetDetailPage() {
 
           {/* Window tabs */}
           <div className="flex gap-1 mt-2 flex-wrap">
-            {(['week', 'month', 'year', 'ytd', 'alltime', 'custom'] as PriceWindow[]).map((w) => (
+            {(['week', 'month', 'year', 'ytd', 'alltime', 'custom'] as ChartWindow[]).map((w) => (
               <Button
                 key={w}
                 variant={window === w ? 'default' : 'outline'}
