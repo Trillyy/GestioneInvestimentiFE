@@ -268,6 +268,30 @@ export interface AssetHoldingDetail {
   transactions: TransactionResponse[]
 }
 
+// ─── Portfolio Value History ──────────────────────────────────────────────────
+
+export interface SnapshotPoint {
+  snapshotDate: string
+  totalValue: number
+  totalInvested: number
+  unrealizedPnl: number
+  unrealizedPnlPct: number
+  realizedPnl: number
+}
+
+export interface LatestSnapshot extends SnapshotPoint {
+  computedAt: string
+}
+
+export interface PortfolioValueHistoryDetailResponse {
+  scopeType: 'PORTFOLIO' | 'ALL'
+  portfolioId: number | null
+  portfolioName: string | null
+  currency: string
+  latestSnapshot: LatestSnapshot | null
+  series: SnapshotPoint[]
+}
+
 // ─── ETF Holdings ─────────────────────────────────────────────────────────────
 
 export interface HoldingItem {

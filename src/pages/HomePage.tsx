@@ -2,15 +2,28 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { TrendingUp, TrendingDown, Wallet, ExternalLink } from 'lucide-react'
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts'
 import { listHoldings } from '@/api/holdings'
 import { listPortfolios } from '@/api/portfolios'
-import { fmtCurrency, fmtNum, pnlColorClass } from '@/lib/formatters'
+import { getPortfolioValueHistory } from '@/api/portfolioValueHistory'
+import { type ChartWindow, fmtCurrency, fmtNum, pnlColorClass, WINDOW_LABELS} from '@/lib/formatters'
 import { ASSET_TYPE_LABELS, ASSET_TYPE_VARIANT, ASSET_TYPES } from '@/lib/assetTypes'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Combobox } from '@/components/ui/combobox'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
 import {
   Table,
   TableBody,
@@ -19,8 +32,93 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import type { AssetType, PortfolioHoldingResponse, PortfolioHoldingsResponse, PortfolioResponse } from '@/types/api'
+import type { AssetType, PortfolioHoldingResponse, PortfolioHoldingsResponse, PortfolioResponse, PortfolioValueHistoryDetailResponse, SnapshotPoint } from '@/types/api'
 import { cn } from '@/lib/utils'
+
+// ─── Portfolio chart ──────────────────────────────────────────────────────────
+
+function getWindowDates(w: Exclude<ChartWindow, 'custom'>): { from: string; to: string } {
+  const today = new Date()
+  const to = today.toISOString().slice(0, 10)
+  if (w === 'ytd') return { from: `${today.getFullYear()}-01-01`, to }
+  if (w === 'alltime') return { from: '1900-01-01', to }
+  const from = new Date(today)
+  if (w === 'week') from.setDate(from.getDate() - 7)
+  else if (w === 'month') from.setMonth(from.getMonth() - 1)
+  else from.setFullYear(from.getFullYear() - 1) // year
+  return { from: from.toISOString().slice(0, 10), to }
+}
+
+function PortfolioChart({ data, currency }: { data: SnapshotPoint[]; currency: string }) {
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
+        Nessun dato disponibile per il periodo selezionato
+      </div>
+    )
+  }
+
+  const allValues = data.flatMap((d) => [d.totalValue, d.totalInvested])
+  const minVal = Math.min(...allValues)
+  const maxVal = Math.max(...allValues)
+  const padding = (maxVal - minVal) * 0.05 || 100
+
+  return (
+    <ResponsiveContainer width="100%" height={280}>
+      <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+        <XAxis
+          dataKey="date"
+          tickFormatter={(v: string) =>
+            new Date(v).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })
+          }
+          tick={{ fontSize: 11 }}
+          tickLine={false}
+          interval="preserveStartEnd"
+        />
+        <YAxis
+          domain={[Math.max(0, minVal - padding), maxVal + padding]}
+          tick={{ fontSize: 11 }}
+          tickLine={false}
+          axisLine={false}
+          tickFormatter={(v: number) => fmtNum(v, 0)}
+          width={90}
+        />
+        <Tooltip
+          formatter={(v: number, name: string) => [
+            `${fmtNum(v)} ${currency}`,
+            name === 'Valore' ? 'Valore' : 'Investito',
+          ]}
+          labelFormatter={(label: string) => new Date(label).toLocaleDateString('it-IT')}
+        />
+        <Legend
+          formatter={(value: string) => (
+            <span className="text-xs">{value}</span>
+          )}
+        />
+        <Line
+          type="monotone"
+          dataKey="totalValue"
+          name="Valore"
+          stroke="#6366f1"
+          strokeWidth={2}
+          dot={false}
+          activeDot={{ r: 4 }}
+        />
+        <Line
+          type="monotone"
+          dataKey="totalInvested"
+          name="Investito"
+          stroke="#94a3b8"
+          strokeWidth={1.5}
+          strokeDasharray="4 2"
+          dot={false}
+          activeDot={{ r: 3 }}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  )
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -83,6 +181,12 @@ export default function HomePage() {
   const [data, setData] = useState<PortfolioHoldingsResponse | null>(null)
   const [loading, setLoading] = useState(false)
 
+  const [historyData, setHistoryData] = useState<PortfolioValueHistoryDetailResponse | null>(null)
+  const [historyWindow, setHistoryWindow] = useState<HistoryWindow>('month')
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [customFrom, setCustomFrom] = useState('')
+  const [customTo, setCustomTo] = useState('')
+
   useEffect(() => {
     listPortfolios()
       .then((res) => setPortfolios(res.data))
@@ -101,14 +205,49 @@ export default function HomePage() {
     }
   }, [])
 
+  const fetchHistory = useCallback(async (pId?: number, from?: string, to?: string) => {
+    setHistoryLoading(true)
+    try {
+      const res = await getPortfolioValueHistory(pId, from, to)
+      setHistoryData(res.data)
+    } catch {
+      toast.error('Errore nel caricamento dello storico portafoglio')
+    } finally {
+      setHistoryLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     void fetchHoldings()
-  }, [fetchHoldings])
+    const { from, to } = getWindowDates('month')
+    void fetchHistory(undefined, from, to)
+  }, [fetchHoldings, fetchHistory])
 
   function handlePortfolioChange(val: string) {
     setPortfolioFilter(val)
-    void fetchHoldings(val ? Number(val) : undefined)
+    setHistoryWindow('month')
+    const pId = val ? Number(val) : undefined
+    void fetchHoldings(pId)
+    const { from, to } = getWindowDates('month')
+    void fetchHistory(pId, from, to)
   }
+
+  function handleHistoryWindowChange(w: HistoryWindow) {
+    setHistoryWindow(w)
+    if (w === 'custom') return
+    const { from, to } = getWindowDates(w)
+    void fetchHistory(portfolioFilter ? Number(portfolioFilter) : undefined, from, to)
+  }
+
+  async function handleCustomHistorySearch() {
+    if (!customFrom || !customTo) {
+      toast.error('Inserisci entrambe le date')
+      return
+    }
+    await fetchHistory(portfolioFilter ? Number(portfolioFilter) : undefined, customFrom, customTo)
+  }
+
+  const chartData: SnapshotPoint[] = historyData?.series ?? []
 
   const allHoldings: PortfolioHoldingResponse[] = data?.holdings ?? []
   const holdings = assetTypeFilter
@@ -153,6 +292,63 @@ export default function HomePage() {
           icon={pnlPositive ? TrendingUp : TrendingDown}
         />
       </div>
+
+      {/* Portfolio chart */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Andamento Portafoglio</CardTitle>
+          <div className="flex gap-1 mt-2 flex-wrap">
+            {(['week', 'month', 'year', 'ytd', 'alltime', 'custom'] as ChartWindow[]).map((w) => (
+              <Button
+                key={w}
+                variant={historyWindow === w ? 'default' : 'outline'}
+                size="xs"
+                disabled={historyLoading}
+                onClick={() => handleHistoryWindowChange(w)}
+              >
+                {WINDOW_LABELS[w]}
+              </Button>
+            ))}
+          </div>
+          {historyWindow === 'custom' && (
+            <>
+              <Separator className="mt-3" />
+              <div className="flex items-end gap-3 mt-3 flex-wrap">
+                <div className="space-y-1">
+                  <Label className="text-xs">Dal</Label>
+                  <Input
+                    type="date"
+                    value={customFrom}
+                    onChange={(e) => setCustomFrom(e.target.value)}
+                    className="h-8 w-36"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Al</Label>
+                  <Input
+                    type="date"
+                    value={customTo}
+                    onChange={(e) => setCustomTo(e.target.value)}
+                    className="h-8 w-36"
+                  />
+                </div>
+                <Button size="sm" onClick={() => void handleCustomHistorySearch()} disabled={historyLoading}>
+                  {historyLoading ? 'Caricamento…' : 'Cerca'}
+                </Button>
+              </div>
+            </>
+          )}
+        </CardHeader>
+        <CardContent>
+          {historyLoading ? (
+            <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
+              Caricamento…
+            </div>
+          ) : (
+            <PortfolioChart data={chartData} currency={historyData?.currency ?? 'EUR'} />
+          )}
+        </CardContent>
+      </Card>
 
       {/* Filter */}
       <div className="flex flex-wrap items-end gap-4">

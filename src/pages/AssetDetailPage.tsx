@@ -436,7 +436,7 @@ export default function AssetDetailPage() {
                     />
                     <InfoRow
                       label="PMC"
-                      value={`${h.averageCost.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ${h.currencyCode}`}
+                      value={h.quantityHeld > 0 ? `${h.averageCost.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ${h.currencyCode}` : '—'}
                     />
                     <InfoRow
                       label="Totale Investito"
