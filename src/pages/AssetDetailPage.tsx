@@ -8,6 +8,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from 'recharts'
 import { ChevronDown, ChevronUp } from 'lucide-react'
@@ -96,9 +97,15 @@ function PriceLineChart({ data }: { data: PricePoint[] }) {
           formatter={(v: number) => [v.toFixed(4), 'Prezzo']}
           labelFormatter={(label: string) => new Date(label).toLocaleDateString('it-IT')}
         />
+        <Legend
+          formatter={(value: string) => (
+            <span className="text-xs">{value}</span>
+          )}
+        />
         <Line
           type="monotone"
           dataKey="price"
+          name="Prezzo"
           stroke="#6366f1"
           strokeWidth={2}
           dot={false}

@@ -8,6 +8,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from 'recharts'
 import { getCurrencyPairDetail } from '@/api/exchangeRates'
@@ -62,9 +63,15 @@ function RateLineChart({ data }: { data: RatePoint[] }) {
           formatter={(v: number) => [v.toFixed(6), 'Tasso']}
           labelFormatter={(label: string) => new Date(label).toLocaleDateString('it-IT')}
         />
+        <Legend
+          formatter={(value: string) => (
+            <span className="text-xs">{value}</span>
+          )}
+        />
         <Line
           type="monotone"
           dataKey="rate"
+          name="Tasso"
           stroke="#6366f1"
           strokeWidth={2}
           dot={false}
