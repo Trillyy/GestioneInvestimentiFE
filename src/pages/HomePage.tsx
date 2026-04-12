@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { TrendingUp, TrendingDown, Wallet, ExternalLink } from 'lucide-react'
@@ -49,7 +49,19 @@ function getWindowDates(w: Exclude<ChartWindow, 'custom'>): { from: string; to: 
   return { from: from.toISOString().slice(0, 10), to }
 }
 
-function PortfolioChart({ data, currency }: { data: SnapshotPoint[]; currency: string }) {
+function PortfolioChart({
+  data,
+  currency,
+  onHover,
+  onHoverEnd,
+}: {
+  data: SnapshotPoint[]
+  currency: string
+  onHover?: (point: SnapshotPoint) => void
+  onHoverEnd?: () => void
+}) {
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
@@ -65,7 +77,24 @@ function PortfolioChart({ data, currency }: { data: SnapshotPoint[]; currency: s
 
   return (
     <ResponsiveContainer width="100%" height={280}>
-      <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+      <LineChart
+        data={data}
+        margin={{ top: 4, right: 8, bottom: 0, left: 0 }}
+        onMouseMove={(state) => {
+          const index = state.activeTooltipIndex
+          if (index != null && data[index] != null) {
+            if (hoverTimer.current) clearTimeout(hoverTimer.current)
+            hoverTimer.current = setTimeout(() => onHover?.(data[index]), 60)
+          }
+        }}
+        onMouseLeave={() => {
+          if (hoverTimer.current) {
+            clearTimeout(hoverTimer.current)
+            hoverTimer.current = null
+          }
+          onHoverEnd?.()
+        }}
+      >
         <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
         <XAxis
           dataKey="date"
@@ -87,7 +116,7 @@ function PortfolioChart({ data, currency }: { data: SnapshotPoint[]; currency: s
         <Tooltip
           formatter={(v: number, name: string) => [
             `${fmtNum(v)} ${currency}`,
-            name === 'Valore' ? 'Valore' : 'Investito',
+            name,
           ]}
           labelFormatter={(label: string) => new Date(label).toLocaleDateString('it-IT')}
         />
@@ -181,6 +210,8 @@ export default function HomePage() {
   const [data, setData] = useState<PortfolioHoldingsResponse | null>(null)
   const [loading, setLoading] = useState(false)
 
+  const [hoveredPoint, setHoveredPoint] = useState<SnapshotPoint | null>(null)
+
   const [historyData, setHistoryData] = useState<PortfolioValueHistoryDetailResponse | null>(null)
   const [historyWindow, setHistoryWindow] = useState<HistoryWindow>('month')
   const [historyLoading, setHistoryLoading] = useState(false)
@@ -257,7 +288,20 @@ export default function HomePage() {
   const totalInvested = data?.totalInvested ?? 0
   const totalPnl = data?.totalUnrealizedPnl ?? 0
   const totalPnlPct = data?.totalUnrealizedPnlPct ?? 0
-  const pnlPositive = totalPnl >= 0
+
+  const displayInvested = hoveredPoint?.totalInvested ?? totalInvested
+  const displayPnl = hoveredPoint
+    ? hoveredPoint.totalValue - hoveredPoint.totalInvested
+    : totalPnl
+  const displayPnlPct = hoveredPoint
+    ? hoveredPoint.totalInvested > 0
+      ? ((hoveredPoint.totalValue - hoveredPoint.totalInvested) / hoveredPoint.totalInvested) * 100
+      : 0
+    : totalPnlPct
+  const pnlPositive = displayPnl >= 0
+  const hoveredDate = hoveredPoint
+    ? new Date(hoveredPoint.date).toLocaleDateString('it-IT')
+    : undefined
 
   const portfolioOptions = [
     { value: '', label: 'Tutti i portafogli' },
@@ -275,19 +319,21 @@ export default function HomePage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           title="Capitale Investito"
-          value={fmtCurrency(totalInvested)}
+          value={fmtCurrency(displayInvested)}
+          sub={hoveredDate ? `Al ${hoveredDate}` : undefined}
           icon={Wallet}
         />
         <StatCard
           title="P&L Non Realizzato"
-          value={`${pnlPositive ? '+' : ''}${fmtCurrency(totalPnl)}`}
+          value={`${pnlPositive ? '+' : ''}${fmtCurrency(displayPnl)}`}
+          sub={hoveredDate ? `Al ${hoveredDate}` : undefined}
           positive={pnlPositive}
           icon={pnlPositive ? TrendingUp : TrendingDown}
         />
         <StatCard
           title="P&L Non Realizzato %"
-          value={`${pnlPositive ? '+' : ''}${fmtNum(totalPnlPct)}%`}
-          sub="Sul capitale investito totale"
+          value={`${pnlPositive ? '+' : ''}${fmtNum(displayPnlPct)}%`}
+          sub={hoveredDate ? `Al ${hoveredDate}` : 'Sul capitale investito totale'}
           positive={pnlPositive}
           icon={pnlPositive ? TrendingUp : TrendingDown}
         />
@@ -345,7 +391,12 @@ export default function HomePage() {
               Caricamento…
             </div>
           ) : (
-            <PortfolioChart data={chartData} currency={historyData?.currency ?? 'EUR'} />
+            <PortfolioChart
+              data={chartData}
+              currency={historyData?.currency ?? 'EUR'}
+              onHover={setHoveredPoint}
+              onHoverEnd={() => setHoveredPoint(null)}
+            />
           )}
         </CardContent>
       </Card>
