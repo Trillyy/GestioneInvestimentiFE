@@ -231,6 +231,11 @@ export default function TransactionsPage() {
           placeholder="Tutti i portfolio"
           className="w-56"
         />
+        {portfolioFilter && (
+          <Button variant="ghost" size="sm" onClick={() => handlePortfolioFilterChange('')}>
+            Reimposta
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -316,20 +321,27 @@ export default function TransactionsPage() {
         </Table>
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Pagina {page + 1} di {totalPages}</span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
-              Precedente
-            </Button>
-            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>
-              Successiva
-            </Button>
+      {/* Pagination + count */}
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <span>
+          {totalElements > 0
+            ? `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, totalElements)} di ${totalElements} elementi`
+            : '0 elementi'}
+        </span>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-3">
+            <span>Pagina {page + 1} di {totalPages}</span>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+                Precedente
+              </Button>
+              <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>
+                Successiva
+              </Button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Create Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>

@@ -13,6 +13,7 @@ import {
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { getAssetDetail } from '@/api/assets'
 import { getHoldingsByAsset } from '@/api/holdings'
+import { ASSET_TYPE_LABELS, ASSET_TYPE_VARIANT } from '@/lib/assetTypes'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -30,22 +31,6 @@ import type {
 } from '@/types/api'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const ASSET_TYPE_LABELS: Record<AssetType, string> = {
-  STOCK: 'Azione',
-  ETF: 'ETF',
-  FUND: 'Fondo',
-  BOND: 'Obbligazione',
-  CRYPTO: 'Criptovaluta',
-}
-
-const ASSET_TYPE_VARIANT: Record<AssetType, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-  STOCK: 'default',
-  ETF: 'secondary',
-  FUND: 'secondary',
-  BOND: 'outline',
-  CRYPTO: 'destructive',
-}
 
 const REPLICATION_LABELS: Record<string, string> = {
   PHYSICAL_FULL: 'Fisica completa',

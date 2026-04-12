@@ -4,7 +4,9 @@ import { toast } from 'sonner'
 import { TrendingUp, TrendingDown, Wallet, ExternalLink } from 'lucide-react'
 import { listHoldings } from '@/api/holdings'
 import { listPortfolios } from '@/api/portfolios'
+import { ASSET_TYPE_LABELS, ASSET_TYPE_VARIANT, ASSET_TYPES } from '@/lib/assetTypes'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Combobox } from '@/components/ui/combobox'
 import { Label } from '@/components/ui/label'
@@ -21,15 +23,6 @@ import { cn } from '@/lib/utils'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const ASSET_TYPE_LABELS: Record<string, string> = {
-  STOCK: 'Azione',
-  ETF: 'ETF',
-  FUND: 'Fondo',
-  BOND: 'Obbligazione',
-  CRYPTO: 'Crypto',
-}
-
-const ASSET_TYPES: AssetType[] = ['STOCK', 'ETF', 'FUND', 'BOND', 'CRYPTO']
 
 function fmt(value: number, decimals = 2) {
   return value.toLocaleString('it-IT', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
@@ -194,6 +187,20 @@ export default function HomePage() {
             placeholder="Tutti i tipi"
           />
         </div>
+        {(portfolioFilter || assetTypeFilter) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="self-end"
+            onClick={() => {
+              setPortfolioFilter('')
+              setAssetTypeFilter('')
+              void fetchHoldings()
+            }}
+          >
+            Reimposta
+          </Button>
+        )}
       </div>
 
       {/* Holdings table */}
@@ -202,6 +209,7 @@ export default function HomePage() {
       ) : holdings.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nessuna posizione aperta.</p>
       ) : (
+        <>
         <div className="rounded-lg border">
           <Table>
             <TableHeader>
@@ -231,7 +239,7 @@ export default function HomePage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant={ASSET_TYPE_VARIANT[h.assetType]} className="text-xs">
                       {ASSET_TYPE_LABELS[h.assetType] ?? h.assetType}
                     </Badge>
                   </TableCell>
@@ -265,6 +273,12 @@ export default function HomePage() {
             </TableBody>
           </Table>
         </div>
+        <p className="text-sm text-muted-foreground mt-2">
+          {assetTypeFilter
+            ? `${holdings.length} di ${allHoldings.length} elementi`
+            : `${holdings.length} elementi`}
+        </p>
+        </>
       )}
     </div>
   )
