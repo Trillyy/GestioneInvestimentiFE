@@ -10,18 +10,23 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { getAssetDetail } from '@/api/assets'
+import { getHoldingsByAsset } from '@/api/holdings'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import type {
   AssetDetailResponse,
+  AssetHoldingDetail,
   AssetType,
   PricePoint,
   PriceType,
+  TransactionType,
 } from '@/types/api'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -92,6 +97,45 @@ function formatPct(value: number | null | undefined): string {
   return `${(value * 100).toFixed(2)}%`
 }
 
+const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
+  BUY: 'Acquisto',
+  SELL: 'Vendita',
+  DIVIDEND: 'Dividendo',
+  INTEREST: 'Interesse',
+  SPLIT: 'Split',
+  TRANSFER_IN: 'Trasf. Entrata',
+  TRANSFER_OUT: 'Trasf. Uscita',
+  FEE: 'Commissione',
+}
+
+const TRANSACTION_TYPE_VARIANT: Record<TransactionType, 'default' | 'secondary' | 'outline' | 'destructive'> = {
+  BUY: 'default',
+  SELL: 'destructive',
+  DIVIDEND: 'secondary',
+  INTEREST: 'secondary',
+  SPLIT: 'outline',
+  TRANSFER_IN: 'outline',
+  TRANSFER_OUT: 'outline',
+  FEE: 'outline',
+}
+
+function pnlColorClass(val: number | null | undefined): string {
+  if (val == null || val === 0) return ''
+  return val > 0 ? 'text-emerald-600' : 'text-red-500'
+}
+
+function formatSignedAmount(value: number | null | undefined, currency: string): string {
+  if (value == null) return '—'
+  const sign = value > 0 ? '+' : ''
+  return `${sign}${value.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`
+}
+
+function formatSignedPct(value: number | null | undefined): string {
+  if (value == null) return '—'
+  const sign = value > 0 ? '+' : ''
+  return `${sign}${value.toFixed(2)}%`
+}
+
 // ─── Price Chart ──────────────────────────────────────────────────────────────
 
 function PriceLineChart({ data }: { data: PricePoint[] }) {
@@ -154,6 +198,16 @@ export default function AssetDetailPage() {
 
   const [asset, setAsset] = useState<AssetDetailResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [assetHoldings, setAssetHoldings] = useState<AssetHoldingDetail[]>([])
+  const [expandedHoldings, setExpandedHoldings] = useState<Set<number>>(new Set())
+
+  function toggleTransactions(holdingId: number) {
+    setExpandedHoldings((prev) => {
+      const next = new Set(prev)
+      next.has(holdingId) ? next.delete(holdingId) : next.add(holdingId)
+      return next
+    })
+  }
 
   const [window, setWindow] = useState<PriceWindow>('month')
   const priceType: PriceType = 'ADJUSTED_CLOSE'
@@ -175,7 +229,12 @@ export default function AssetDetailPage() {
 
   useEffect(() => {
     setLoading(true)
-    fetchDetail().finally(() => setLoading(false))
+    Promise.all([
+      fetchDetail(),
+      getHoldingsByAsset(assetId)
+        .then((res) => setAssetHoldings(res.data))
+        .catch(() => {}),
+    ]).finally(() => setLoading(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assetId])
 
@@ -425,6 +484,156 @@ export default function AssetDetailPage() {
               <InfoRow label="Network" value={asset.cryptoDetail.network ?? '—'} />
               <InfoRow label="Standard Token" value={asset.cryptoDetail.tokenStandard ?? '—'} />
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Portfolio Holdings */}
+      {assetHoldings.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Posizione in Portafoglio</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {assetHoldings.map((item, i) => {
+              const h = item.holding
+              const marketValue = h.lastPrice != null ? h.lastPrice * h.quantityHeld : null
+              const hasPnl = item.transactions.some((t) => t.realizedPnl != null)
+              return (
+                <div key={h.id}>
+                  {assetHoldings.length > 1 && (
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                      {h.portfolioName}
+                    </p>
+                  )}
+
+                  {/* Position metrics */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {assetHoldings.length === 1 && (
+                      <InfoRow label="Portafoglio" value={h.portfolioName} />
+                    )}
+                    <InfoRow
+                      label="Quantità"
+                      value={h.quantityHeld.toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 6 })}
+                    />
+                    <InfoRow
+                      label="PMC"
+                      value={`${h.averageCost.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ${h.currencyCode}`}
+                    />
+                    <InfoRow
+                      label="Totale Investito"
+                      value={`${h.totalInvested.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${h.currencyCode}`}
+                    />
+                    {marketValue != null && (
+                      <InfoRow
+                        label="Valore di Mercato"
+                        value={`${marketValue.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${h.currencyCode}`}
+                      />
+                    )}
+                    <InfoRow
+                      label="P&L Non Realizzato"
+                      value={
+                        <span className={pnlColorClass(h.unrealizedPnl)}>
+                          {formatSignedAmount(h.unrealizedPnl, h.currencyCode)}
+                        </span>
+                      }
+                    />
+                    <InfoRow
+                      label="Rendimento"
+                      value={
+                        <span className={pnlColorClass(h.unrealizedPnlPct)}>
+                          {formatSignedPct(h.unrealizedPnlPct)}
+                        </span>
+                      }
+                    />
+                    <InfoRow label="Primo Acquisto" value={formatDate(h.firstBuyDate)} />
+                    <InfoRow label="Ultima Operazione" value={formatDate(h.lastTransactionDate)} />
+                  </div>
+
+                  {/* Transactions */}
+                  {item.transactions.length > 0 && (
+                    <>
+                      <Separator className="my-4" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground -ml-2"
+                        onClick={() => toggleTransactions(h.id)}
+                      >
+                        {expandedHoldings.has(h.id) ? (
+                          <ChevronUp className="mr-1 h-3.5 w-3.5" />
+                        ) : (
+                          <ChevronDown className="mr-1 h-3.5 w-3.5" />
+                        )}
+                        Transazioni ({item.transactions.length})
+                      </Button>
+                      {expandedHoldings.has(h.id) && (
+                        <div className="overflow-x-auto mt-2">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="text-xs">Data</TableHead>
+                                <TableHead className="text-xs">Tipo</TableHead>
+                                <TableHead className="text-xs text-right">Quantità</TableHead>
+                                <TableHead className="text-xs text-right">Prezzo Unit.</TableHead>
+                                <TableHead className="text-xs text-right">Totale</TableHead>
+                                <TableHead className="text-xs text-right">Comm.</TableHead>
+                                {hasPnl && <TableHead className="text-xs text-right">P&L Realizz.</TableHead>}
+                                <TableHead className="text-xs">Note</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {item.transactions.map((t) => (
+                                <TableRow key={t.id}>
+                                  <TableCell className="text-xs font-mono whitespace-nowrap">
+                                    {formatDate(t.transactionDate)}
+                                  </TableCell>
+                                  <TableCell className="text-xs">
+                                    <Badge variant={TRANSACTION_TYPE_VARIANT[t.transactionType]} className="text-xs">
+                                      {TRANSACTION_TYPE_LABELS[t.transactionType]}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-xs text-right font-mono">
+                                    {t.quantity.toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 6 })}
+                                  </TableCell>
+                                  <TableCell className="text-xs text-right font-mono">
+                                    {t.unitPrice != null
+                                      ? `${t.unitPrice.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ${t.currencyCode}`
+                                      : '—'}
+                                  </TableCell>
+                                  <TableCell className="text-xs text-right font-mono whitespace-nowrap">
+                                    {t.totalAmount.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {t.currencyCode}
+                                  </TableCell>
+                                  <TableCell className="text-xs text-right font-mono">
+                                    {t.fees > 0
+                                      ? `${t.fees.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${t.currencyCode}`
+                                      : '—'}
+                                  </TableCell>
+                                  {hasPnl && (
+                                    <TableCell className="text-xs text-right font-mono whitespace-nowrap">
+                                      {t.realizedPnl != null ? (
+                                        <span className={pnlColorClass(t.realizedPnl)}>
+                                          {formatSignedAmount(t.realizedPnl, t.currencyCode)}
+                                        </span>
+                                      ) : '—'}
+                                    </TableCell>
+                                  )}
+                                  <TableCell className="text-xs text-muted-foreground max-w-[160px] truncate">
+                                    {t.notes ?? '—'}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {i < assetHoldings.length - 1 && <Separator className="mt-5" />}
+                </div>
+              )
+            })}
           </CardContent>
         </Card>
       )}

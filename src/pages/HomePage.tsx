@@ -4,9 +4,9 @@ import { toast } from 'sonner'
 import { TrendingUp, TrendingDown, Wallet, ExternalLink } from 'lucide-react'
 import { listHoldings } from '@/api/holdings'
 import { listPortfolios } from '@/api/portfolios'
-import { Combobox } from '@/components/ui/combobox'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Combobox } from '@/components/ui/combobox'
 import { Label } from '@/components/ui/label'
 import {
   Table,
@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import type { PortfolioHoldingResponse, PortfolioHoldingsResponse, PortfolioResponse } from '@/types/api'
+import type { AssetType, PortfolioHoldingResponse, PortfolioHoldingsResponse, PortfolioResponse } from '@/types/api'
 import { cn } from '@/lib/utils'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -28,6 +28,8 @@ const ASSET_TYPE_LABELS: Record<string, string> = {
   BOND: 'Obbligazione',
   CRYPTO: 'Crypto',
 }
+
+const ASSET_TYPES: AssetType[] = ['STOCK', 'ETF', 'FUND', 'BOND', 'CRYPTO']
 
 function fmt(value: number, decimals = 2) {
   return value.toLocaleString('it-IT', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
@@ -91,6 +93,7 @@ function StatCard({
 export default function HomePage() {
   const [portfolios, setPortfolios] = useState<PortfolioResponse[]>([])
   const [portfolioFilter, setPortfolioFilter] = useState<string>('')
+  const [assetTypeFilter, setAssetTypeFilter] = useState<AssetType | ''>('')
   const [data, setData] = useState<PortfolioHoldingsResponse | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -121,7 +124,11 @@ export default function HomePage() {
     void fetchHoldings(val ? Number(val) : undefined)
   }
 
-  const holdings: PortfolioHoldingResponse[] = data?.holdings ?? []
+  const allHoldings: PortfolioHoldingResponse[] = data?.holdings ?? []
+  const holdings = assetTypeFilter
+    ? allHoldings.filter((h) => h.assetType === assetTypeFilter)
+    : allHoldings
+  const activeTypes = new Set(allHoldings.map((h) => h.assetType))
   const totalInvested = data?.totalInvested ?? 0
   const totalPnl = data?.totalUnrealizedPnl ?? 0
   const totalPnlPct = data?.totalUnrealizedPnlPct ?? 0
@@ -162,7 +169,7 @@ export default function HomePage() {
       </div>
 
       {/* Filter */}
-      <div className="flex items-end gap-4">
+      <div className="flex flex-wrap items-end gap-4">
         <div className="space-y-1.5 w-64">
           <Label>Portafoglio</Label>
           <Combobox
@@ -170,6 +177,21 @@ export default function HomePage() {
             onChange={handlePortfolioChange}
             options={portfolioOptions}
             placeholder="Tutti i portafogli"
+          />
+        </div>
+        <div className="space-y-1.5 w-48">
+          <Label>Tipo</Label>
+          <Combobox
+            value={assetTypeFilter}
+            onChange={(val) => setAssetTypeFilter(val as AssetType | '')}
+            options={[
+              { value: '', label: 'Tutti i tipi' },
+              ...ASSET_TYPES.filter((t) => activeTypes.has(t)).map((t) => ({
+                value: t,
+                label: ASSET_TYPE_LABELS[t],
+              })),
+            ]}
+            placeholder="Tutti i tipi"
           />
         </div>
       </div>

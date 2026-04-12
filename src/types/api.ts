@@ -263,6 +263,11 @@ export interface PortfolioHoldingsResponse {
   totalUnrealizedPnlPct: number
 }
 
+export interface AssetHoldingDetail {
+  holding: PortfolioHoldingResponse
+  transactions: TransactionResponse[]
+}
+
 // ─── ETF Holdings ─────────────────────────────────────────────────────────────
 
 export interface HoldingItem {
