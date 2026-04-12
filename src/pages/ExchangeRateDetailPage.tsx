@@ -112,8 +112,11 @@ export default function ExchangeRateDetailPage() {
       setCustomLoading(true)
       try { await fetchDetail({ from: jan1, to: todayStr }) }
       finally { setCustomLoading(false) }
-    } else if (w === 'custom') {
-      return
+    } else if (w === 'alltime') {
+      const todayStr = new Date().toISOString().slice(0, 10)
+      setCustomLoading(true)
+      try { await fetchDetail({ from: '1900-01-01', to: todayStr }) }
+      finally { setCustomLoading(false) }
     }
     // week/month/year are pre-fetched in the response, no extra call needed
   }
@@ -218,7 +221,7 @@ export default function ExchangeRateDetailPage() {
           <CardTitle className="text-base">Storico Tassi di Cambio</CardTitle>
 
           <div className="flex gap-1 mt-2 flex-wrap">
-            {(['week', 'month', 'year', 'ytd', 'custom'] as ChartWindow[]).map((w) => (
+            {(['week', 'month', 'year', 'ytd', 'alltime', 'custom'] as ChartWindow[]).map((w) => (
               <Button
                 key={w}
                 variant={window === w ? 'default' : 'outline'}

@@ -251,7 +251,7 @@ export default function EtfHoldingsPage() {
           <CardDescription>
             {activeParser.hint}
             {issuerId === 'generic' && (
-              <>
+              <div className="flex">
                 {' '}
                 <button
                   type="button"
@@ -260,7 +260,7 @@ export default function EtfHoldingsPage() {
                 >
                   Scarica file di esempio
                 </button>
-              </>
+              </div>
             )}
           </CardDescription>
         </CardHeader>
@@ -392,50 +392,53 @@ export default function EtfHoldingsPage() {
             Nessuna partecipazione registrata per questo asset.
           </p>
         ) : (
-          <div className="rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Peso (%)</TableHead>
-                  <TableHead>Asset</TableHead>
-                  <TableHead>ISIN</TableHead>
-                  <TableHead>Ticker</TableHead>
-                  <TableHead>Registro</TableHead>
-                  <TableHead>Paese</TableHead>
-                  <TableHead>Settore</TableHead>
-                  <TableHead>Data</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {holdings.map((h) => (
-                  <TableRow key={h.id}>
-                    <TableCell className="font-mono font-medium">
-                      {Number(h.weightPct).toFixed(2)}%
-                    </TableCell>
-                    <TableCell>{h.heldAssetName}</TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {h.heldAssetIsin ?? '—'}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {h.heldAssetTicker ?? '—'}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {h.heldAssetRegistryName ?? '—'}
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {h.countryName ?? h.countryCode ?? '—'}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {h.sectorName ?? '—'}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {h.validFrom}
-                    </TableCell>
+          <>
+            <div className="rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Peso (%)</TableHead>
+                    <TableHead>Asset</TableHead>
+                    <TableHead>ISIN</TableHead>
+                    <TableHead>Ticker</TableHead>
+                    <TableHead>Registro</TableHead>
+                    <TableHead>Paese</TableHead>
+                    <TableHead>Settore</TableHead>
+                    <TableHead>Data</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {holdings.map((h) => (
+                    <TableRow key={h.id}>
+                      <TableCell className="font-mono font-medium">
+                        {Number(h.weightPct).toFixed(2)}%
+                      </TableCell>
+                      <TableCell>{h.heldAssetName}</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {h.heldAssetIsin ?? '—'}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {h.heldAssetTicker ?? '—'}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {h.heldAssetRegistryName ?? '—'}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {h.countryName ?? h.countryCode ?? '—'}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {h.sectorName ?? '—'}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {h.validFrom}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <p className="text-sm text-muted-foreground">{holdings.length} elementi</p>
+          </>
         )}
       </div>
     </div>
