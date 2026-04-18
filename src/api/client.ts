@@ -1,12 +1,27 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/gestioneinvestimenti'
-const API_TOKEN = import.meta.env.VITE_API_TOKEN ?? ''
+const LOCAL_URL: string = import.meta.env.VITE_API_BASE_URL
+const PROD_URL: string = import.meta.env.VITE_API_PROD_BASE_URL
+const LOCAL_TOKEN: string = import.meta.env.VITE_API_TOKEN
+const PROD_TOKEN: string = import.meta.env.VITE_API_PROD_TOKEN
+
+export const SERVER_STORAGE_KEY = 'gi_server'
+export type ServerEnv = 'local' | 'prod'
+
+export function getServerConfig(env: ServerEnv) {
+  return env === 'prod'
+    ? { baseURL: PROD_URL, token: PROD_TOKEN }
+    : { baseURL: LOCAL_URL, token: LOCAL_TOKEN }
+}
 
 export const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-    'X-API-Token': API_TOKEN,
-  },
+  headers: { 'Content-Type': 'application/json' },
+})
+
+apiClient.interceptors.request.use((config) => {
+  const env = (localStorage.getItem(SERVER_STORAGE_KEY) ?? 'local') as ServerEnv
+  const { baseURL, token } = getServerConfig(env)
+  config.baseURL = baseURL
+  config.headers['X-API-Token'] = token
+  return config
 })
