@@ -706,8 +706,10 @@ const [deleteOpTarget, setDeleteOpTarget] = useState<PensionFundOperationRespons
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold font-mono">{fmtNum(totalContributions)}</p>
-                <p className="text-xs text-muted-foreground">EUR</p>
+                <p className="text-2xl font-bold font-mono">
+                  {totalValue != null ? fmtNum(totalContributions) : '—'}
+                  <span className="text-sm font-normal text-muted-foreground ml-1">EUR</span>
+                </p>
               </CardContent>
             </Card>
 
@@ -722,6 +724,7 @@ const [deleteOpTarget, setDeleteOpTarget] = useState<PensionFundOperationRespons
                   {holding?.returnAmount != null
                     ? `${holding.returnAmount >= 0 ? '+' : ''}${fmtNum(holding.returnAmount)}`
                     : '—'}
+                  <span className={`text-sm font-normal ml-1 ${pnlColorClass(holding?.returnAmount)}`}>EUR</span>
                 </p>
                 {holding?.returnPct != null && (
                   <p className={`text-xs ${pnlColorClass(holding.returnPct)}`}>
