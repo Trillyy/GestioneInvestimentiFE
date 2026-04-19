@@ -425,7 +425,10 @@ const [deleteOpTarget, setDeleteOpTarget] = useState<PensionFundOperationRespons
     setSelectedNavDate(date)
     setHoldingLoading(true)
     getHolding(fundId, date || undefined)
-      .then((res) => setHolding(res.data[0] ?? null))
+      .then((res) => {
+        setHoldingHistory(res.data)
+        setHolding(res.data[0] ?? null)
+      })
       .catch(() => toast.error('Errore nel caricamento della situazione'))
       .finally(() => setHoldingLoading(false))
   }
@@ -577,7 +580,6 @@ const [deleteOpTarget, setDeleteOpTarget] = useState<PensionFundOperationRespons
   }
 
   const holdingLineData: HoldingPoint[] = [...holdingHistory]
-    .filter((h) => h.holdingDate >= fund.startDate)
     .reverse()
     .map((h) => ({
       date: h.holdingDate,
