@@ -292,6 +292,131 @@ export interface PortfolioValueHistoryDetailResponse {
   series: SnapshotPoint[]
 }
 
+// ─── Pension Funds ───────────────────────────────────────────────────────────
+
+export type BenchmarkType = 'EQUITY' | 'BOND' | 'COMMODITY' | 'REAL_ESTATE' | 'CASH' | 'MIXED' | 'OTHER'
+export type PensionOperationType =
+  | 'VOLUNTARY_CONTRIBUTION' | 'COMPANY_CONTRIBUTION' | 'TFR'
+  | 'MEMBERSHIP_FEE' | 'OTHER_CONTRIBUTION' | 'ADVANCE'
+export type PensionOperationStatus = 'INVESTED' | 'INVESTING' | 'PAYED'
+
+export interface PensionFundResponse {
+  id: number
+  name: string
+  startDate: string
+  strategy: string | null
+  ter: number | null
+  navLink: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PensionFundCreateRequest {
+  name: string
+  startDate: string
+  strategy?: string
+  ter?: number
+  navLink?: string
+}
+
+export interface PensionFundUpdateRequest {
+  name: string
+  startDate: string
+  strategy?: string
+  ter?: number
+  navLink?: string
+}
+
+export interface PensionFundBenchmarkResponse {
+  id: number
+  name: string
+  type: BenchmarkType
+  percentage: number
+  currencyCode: string
+  hedged: boolean
+}
+
+export interface PensionFundBenchmarkCreateRequest {
+  name: string
+  type: BenchmarkType
+  percentage: number
+  currencyCode: string
+  hedged: boolean
+}
+
+export interface PensionFundNavResponse {
+  id: number
+  navDate: string
+  navValue: number
+}
+
+export interface PensionFundNavCreateRequest {
+  navDate: string
+  navValue: number
+}
+
+export interface PensionFundOperationResponse {
+  id: number
+  pensionFundId: number
+  operationDate: string
+  paymentDate: string | null
+  operationType: PensionOperationType
+  status: PensionOperationStatus
+  amount: number
+  quantity: number | null
+  loadValue: number | null
+  purchaseValue: number | null
+  notes: string | null
+  createdAt: string
+}
+
+export interface PensionFundOperationCreateRequest {
+  operationDate: string
+  paymentDate?: string
+  operationType: PensionOperationType
+  status: PensionOperationStatus
+  amount: number
+  quantity?: number
+  loadValue?: number
+  notes?: string
+}
+
+export interface PensionFundHoldingResponse {
+  id: number
+  pensionFundId: number
+  holdingDate: string
+  currentQuantity: number | null
+  currentNav: number | null
+  voluntaryContribution: number | null
+  companyContribution: number | null
+  tfrContribution: number | null
+  otherContributions: number | null
+  extraExpenses: number | null
+  returnAmount: number | null
+  returnPct: number | null
+  updatedAt: string
+}
+
+export interface PensionFundOperationImportResult {
+  imported: number
+  skipped: number
+  errors: number
+  skippedRows: string[]
+  errorRows: string[]
+}
+
+export interface PensionFundHoldingUpdateRequest {
+  currentQuantity?: number
+  currentNav?: number
+  voluntaryContribution?: number
+  companyContribution?: number
+  tfrContribution?: number
+  otherContributions?: number
+  extraExpenses?: number
+  returnAmount?: number
+  returnPct?: number
+}
+
 // ─── ETF Holdings ─────────────────────────────────────────────────────────────
 
 export interface HoldingItem {
