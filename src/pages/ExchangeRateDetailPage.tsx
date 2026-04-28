@@ -9,7 +9,7 @@ import { useChartWindow } from '@/hooks/useChartWindow'
 import { ChartWindowPicker } from '@/components/chart-window-picker'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { CurrencyPairDetailResponse, RatePoint } from '@/types/api'
+import type { CurrencyPairDetailResponse } from '@/types/api'
 
 // ─── Component ────────────────────────────────────────────────────────────────
 

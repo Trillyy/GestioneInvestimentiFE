@@ -21,7 +21,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type {
   AssetDetailResponse,
   AssetHoldingDetail,
-  PricePoint,
   PriceType,
 } from '@/types/api'
 

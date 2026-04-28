@@ -163,7 +163,7 @@ const [deleteOpTarget, setDeleteOpTarget] = useState<PensionFundOperationRespons
       })
       .catch(() => toast.error('Errore nel caricamento del fondo'))
       .finally(() => setLoading(false))
-  }, [fundId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fundId])
 
   async function fetchOperations(page: number) {
     try {
