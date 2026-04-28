@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { genericParser, iSharesParser, franklinTempletonParser, xtrackersParser, amundiParser, spdrParser, type IssuerParser } from '@/lib/parsers'
-import { CustomPieChart, type ChartSlice } from '@/components/custom-pie-chart'
+import { CustomPieChart } from '@/components/custom-pie-chart'
+import { buildChartData } from '@/helpers/chartHelpers.ts'
 import { getHoldings, listAssets, saveHoldings } from '@/api/assets'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Combobox } from '@/components/ui/combobox'
@@ -20,22 +21,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import type { AssetResponse, EtfHoldingResponse, HoldingItem } from '@/types/api'
-
-// ─── Chart helpers ────────────────────────────────────────────────────────────
-
-function buildChartData(
-  holdings: EtfHoldingResponse[],
-  key: 'sectorName' | 'countryName',
-): ChartSlice[] {
-  const map = new Map<string, number>()
-  for (const h of holdings) {
-    const label = h[key] ?? 'N/D'
-    map.set(label, (map.get(label) ?? 0) + Number(h.weightPct))
-  }
-  return Array.from(map.entries())
-    .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
-    .sort((a, b) => b.value - a.value)
-}
 
 // ─── Issuer registry ─────────────────────────────────────────────────────────
 

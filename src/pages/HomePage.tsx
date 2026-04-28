@@ -15,7 +15,7 @@ import {
 import { listHoldings } from '@/api/holdings'
 import { listPortfolios } from '@/api/portfolios'
 import { getPortfolioValueHistory } from '@/api/portfolioValueHistory'
-import { type ChartWindow, fmtCurrency, fmtNum, pnlColorClass } from '@/helpers/formatters.ts'
+import { type ChartWindow, fmtCurrency, fmtNum, getWindowDates, pnlColorClass } from '@/helpers/formatters.ts'
 import { ChartWindowPicker } from '@/components/chart-window-picker'
 import { ASSET_TYPE_LABELS, ASSET_TYPE_VARIANT, ASSET_TYPES } from '@/helpers/assetTypes.ts'
 import { Badge } from '@/components/ui/badge'
@@ -35,18 +35,6 @@ import type { AssetType, PortfolioHoldingResponse, PortfolioHoldingsResponse, Po
 import { cn } from '@/lib/utils'
 
 // ─── Portfolio chart ──────────────────────────────────────────────────────────
-
-function getWindowDates(w: Exclude<ChartWindow, 'custom'>): { from: string; to: string } {
-  const today = new Date()
-  const to = today.toISOString().slice(0, 10)
-  if (w === 'ytd') return { from: `${today.getFullYear()}-01-01`, to }
-  if (w === 'alltime') return { from: '1900-01-01', to }
-  const from = new Date(today)
-  if (w === 'week') from.setDate(from.getDate() - 7)
-  else if (w === 'month') from.setMonth(from.getMonth() - 1)
-  else from.setFullYear(from.getFullYear() - 1) // year
-  return { from: from.toISOString().slice(0, 10), to }
-}
 
 function PortfolioChart({
   data,

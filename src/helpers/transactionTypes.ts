@@ -25,3 +25,7 @@ export const TRANSACTION_TYPE_VARIANT: Record<TransactionType, 'default' | 'seco
 export const TRANSACTION_TYPES: TransactionType[] = [
   'BUY', 'SELL', 'DIVIDEND', 'INTEREST', 'SPLIT', 'TRANSFER_IN', 'TRANSFER_OUT', 'FEE',
 ]
+
+export const NEEDS_ASSET: TransactionType[] = ['BUY', 'SELL', 'DIVIDEND', 'INTEREST', 'SPLIT', 'TRANSFER_IN', 'TRANSFER_OUT']
+
+export const HAS_QTY_PRICE: TransactionType[] = ['BUY', 'SELL', 'SPLIT', 'TRANSFER_IN', 'TRANSFER_OUT']

@@ -5,7 +5,7 @@ import { listAllAssets } from '@/api/assets'
 import { listPortfolios } from '@/api/portfolios'
 import { createTransaction, listTransactions } from '@/api/transactions'
 import { fmtDate, fmtNum } from '@/helpers/formatters.ts'
-import { TRANSACTION_TYPE_LABELS, TRANSACTION_TYPE_VARIANT, TRANSACTION_TYPES } from '@/helpers/transactionTypes.ts'
+import { HAS_QTY_PRICE, NEEDS_ASSET, TRANSACTION_TYPE_LABELS, TRANSACTION_TYPE_VARIANT, TRANSACTION_TYPES } from '@/helpers/transactionTypes.ts'
 import { Combobox } from '@/components/ui/combobox'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -31,13 +31,6 @@ import {
 import { TableLoadingRows } from '@/components/ui/table-loading-rows'
 import { PaginationControls } from '@/components/ui/pagination-controls'
 import type { AssetResponse, PortfolioResponse, TransactionCreateRequest, TransactionResponse, TransactionType } from '@/types/api'
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-// Types requiring asset selection
-const NEEDS_ASSET: TransactionType[] = ['BUY', 'SELL', 'DIVIDEND', 'INTEREST', 'SPLIT', 'TRANSFER_IN', 'TRANSFER_OUT']
-// Types with quantity + unit price
-const HAS_QTY_PRICE: TransactionType[] = ['BUY', 'SELL', 'SPLIT', 'TRANSFER_IN', 'TRANSFER_OUT']
 
 // ─── Form types ───────────────────────────────────────────────────────────────
 

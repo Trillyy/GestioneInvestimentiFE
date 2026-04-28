@@ -18,6 +18,8 @@ import {
   syncNav,
 } from '@/api/pensionFunds'
 import { type ChartWindow, fmtDate, fmtNum, pnlColorClass, WINDOW_LABELS } from '@/helpers/formatters.ts'
+import { BENCHMARK_TYPE_LABELS, BENCHMARK_TYPES, OPERATION_STATUS_LABELS, OPERATION_STATUSES, OPERATION_TYPE_LABELS, OPERATION_TYPES } from '@/helpers/pensionFundTypes.ts'
+import { buildHedgeData, buildTypeData } from '@/helpers/chartHelpers.ts'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -64,66 +66,6 @@ import type {
   PensionOperationType,
 } from '@/types/api'
 
-// ─── Labels ──────────────────────────────────────────────────────────────────
-
-const BENCHMARK_TYPE_LABELS: Record<BenchmarkType, string> = {
-  EQUITY: 'Azionario',
-  BOND: 'Obbligazionario',
-  COMMODITY: 'Materie Prime',
-  REAL_ESTATE: 'Immobiliare',
-  CASH: 'Liquidità',
-  MIXED: 'Misto',
-  OTHER: 'Altro',
-}
-
-const BENCHMARK_TYPES: BenchmarkType[] = [
-  'EQUITY', 'BOND', 'COMMODITY', 'REAL_ESTATE', 'CASH', 'MIXED', 'OTHER',
-]
-
-const OPERATION_TYPE_LABELS: Record<PensionOperationType, string> = {
-  VOLUNTARY_CONTRIBUTION: 'Contributo Volontario',
-  COMPANY_CONTRIBUTION: 'Contributo Aziendale',
-  TFR: 'TFR',
-  MEMBERSHIP_FEE: 'Quota Associativa',
-  OTHER_CONTRIBUTION: 'Altro Contributo',
-  ADVANCE: 'Anticipazione',
-}
-
-const OPERATION_TYPES: PensionOperationType[] = [
-  'VOLUNTARY_CONTRIBUTION', 'COMPANY_CONTRIBUTION', 'TFR',
-  'MEMBERSHIP_FEE', 'OTHER_CONTRIBUTION', 'ADVANCE',
-]
-
-const OPERATION_STATUS_LABELS: Record<PensionOperationStatus, string> = {
-  INVESTED: 'Investito',
-  INVESTING: 'In Investimento',
-  PAYED: 'Pagato',
-}
-
-const OPERATION_STATUSES: PensionOperationStatus[] = ['INVESTED', 'INVESTING', 'PAYED']
-
-// ─── Chart ───────────────────────────────────────────────────────────────────
-
-function buildTypeData(items: PensionFundBenchmarkResponse[]): ChartSlice[] {
-  const map = new Map<string, number>()
-  for (const b of items) {
-    const label = BENCHMARK_TYPE_LABELS[b.type]
-    map.set(label, (map.get(label) ?? 0) + b.percentage)
-  }
-  return Array.from(map.entries())
-    .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
-    .sort((a, b) => b.value - a.value)
-}
-
-function buildHedgeData(items: PensionFundBenchmarkResponse[]): ChartSlice[] {
-  const hedged = items.filter((b) => b.hedged).reduce((s, b) => s + b.percentage, 0)
-  const notHedged = items.filter((b) => !b.hedged).reduce((s, b) => s + b.percentage, 0)
-  return [
-    ...(notHedged > 0 ? [{ name: 'Non Hedged', value: Math.round(notHedged * 100) / 100 }] : []),
-    ...(hedged > 0 ? [{ name: 'Hedged', value: Math.round(hedged * 100) / 100 }] : []),
-  ]
-}
-
 type HoldingPoint = { date: string; versato: number; complessivo: number | undefined }
 
 // ─── Form types ───────────────────────────────────────────────────────────────
@@ -147,12 +89,6 @@ type OperationFormValues = {
   notes: string
 }
 
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function toNum(s: string): number | undefined {
-  return s !== '' ? Number(s) : undefined
-}
 
 const PAGE_SIZE = 20
 

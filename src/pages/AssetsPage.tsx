@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { createAsset, listAssets, listSectors, syncPrices } from '@/api/assets'
-import { ASSET_TYPE_LABELS, ASSET_TYPE_VARIANT, ASSET_TYPES } from '@/helpers/assetTypes.ts'
+import { ASSET_TYPE_LABELS, ASSET_TYPE_VARIANT, ASSET_TYPES, DISTRIBUTION_LABELS, DISTRIBUTION_TYPES, getIssuer, REPLICATION_LABELS, REPLICATION_METHODS } from '@/helpers/assetTypes.ts'
 import { isDateRecent, TODAY } from '@/helpers/formatters.ts'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -31,12 +31,6 @@ import { Combobox } from '@/components/ui/combobox'
 import { TableLoadingRows } from '@/components/ui/table-loading-rows'
 import { PaginationControls } from '@/components/ui/pagination-controls'
 import type { AssetCreateRequest, AssetResponse, AssetType, CouponFrequency, SectorResponse } from '@/types/api'
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function getIssuer(asset: AssetResponse): string | null {
-  return asset.etfDetail?.issuer ?? asset.bondDetail?.issuer ?? null
-}
 
 // ─── Form types ───────────────────────────────────────────────────────────────
 
@@ -453,11 +447,7 @@ export default function AssetsPage() {
                         <Combobox
                           value={field.value ?? ''}
                           onChange={field.onChange}
-                          options={[
-                            { value: 'PHYSICAL_FULL', label: 'Fisica completa' },
-                            { value: 'PHYSICAL_SAMPLING', label: 'Fisica a campione' },
-                            { value: 'SYNTHETIC', label: 'Sintetica' },
-                          ]}
+                          options={REPLICATION_METHODS.map((m) => ({ value: m, label: REPLICATION_LABELS[m] }))}
                           hasError={!!errors.replicationMethod}
                         />
                       )}
@@ -477,10 +467,7 @@ export default function AssetsPage() {
                         <Combobox
                           value={field.value ?? ''}
                           onChange={field.onChange}
-                          options={[
-                            { value: 'ACCUMULATING', label: 'Accumulazione' },
-                            { value: 'DISTRIBUTING', label: 'Distribuzione' },
-                          ]}
+                          options={DISTRIBUTION_TYPES.map((d) => ({ value: d, label: DISTRIBUTION_LABELS[d] }))}
                           hasError={!!errors.distributionType}
                         />
                       )}

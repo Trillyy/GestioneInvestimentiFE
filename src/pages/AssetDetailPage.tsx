@@ -5,7 +5,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 import { CustomLineChart } from '@/components/custom-line-chart'
 import { getAssetDetail } from '@/api/assets'
 import { getHoldingsByAsset } from '@/api/holdings'
-import { ASSET_TYPE_LABELS, ASSET_TYPE_VARIANT } from '@/helpers/assetTypes.ts'
+import { ASSET_TYPE_LABELS, ASSET_TYPE_VARIANT, COUPON_FREQ_LABELS, DISTRIBUTION_LABELS, getIssuer, REPLICATION_LABELS } from '@/helpers/assetTypes.ts'
 import { fmtDate, formatPct, formatSignedAmount, formatSignedPct, pnlColorClass, TODAY } from '@/helpers/formatters.ts'
 import { useChartWindow } from '@/hooks/useChartWindow'
 import { ChartWindowPicker } from '@/components/chart-window-picker'
@@ -24,32 +24,6 @@ import type {
   PricePoint,
   PriceType,
 } from '@/types/api'
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const REPLICATION_LABELS: Record<string, string> = {
-  PHYSICAL_FULL: 'Fisica completa',
-  PHYSICAL_SAMPLING: 'Fisica a campione',
-  SYNTHETIC: 'Sintetica',
-}
-
-const DISTRIBUTION_LABELS: Record<string, string> = {
-  ACCUMULATING: 'Accumulazione',
-  DISTRIBUTING: 'Distribuzione',
-}
-
-const COUPON_FREQ_LABELS: Record<number, string> = {
-  1: 'Annuale',
-  2: 'Semestrale',
-  4: 'Trimestrale',
-  12: 'Mensile',
-}
-
-
-
-
-// ─── Price Chart ──────────────────────────────────────────────────────────────
-
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -142,7 +116,7 @@ export default function AssetDetailPage() {
       ? asset.priceChart[window]
       : (asset.priceChart.custom ?? [])
 
-  const issuer = asset.etfDetail?.issuer ?? asset.bondDetail?.issuer ?? null
+  const issuer = getIssuer(asset)
 
   return (
     <div className="space-y-6">

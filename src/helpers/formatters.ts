@@ -60,6 +60,20 @@ export const WINDOW_LABELS: Record<ChartWindow, string> = {
   custom: 'Personalizzato',
 }
 
+// ─── Chart window dates ───────────────────────────────────────────────────────
+
+export function getWindowDates(w: Exclude<ChartWindow, 'custom'>): { from: string; to: string } {
+  const today = new Date()
+  const to = today.toISOString().slice(0, 10)
+  if (w === 'ytd') return { from: `${today.getFullYear()}-01-01`, to }
+  if (w === 'alltime') return { from: '1900-01-01', to }
+  const from = new Date(today)
+  if (w === 'week') from.setDate(from.getDate() - 7)
+  else if (w === 'month') from.setMonth(from.getMonth() - 1)
+  else from.setFullYear(from.getFullYear() - 1)
+  return { from: from.toISOString().slice(0, 10), to }
+}
+
 // ─── P&L styling ──────────────────────────────────────────────────────────────
 
 /** Returns a Tailwind CSS text-color class based on the sign of a P&L value. */
