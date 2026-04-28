@@ -31,7 +31,6 @@ export default function ExchangeRateDetailPage() {
   useEffect(() => {
     setLoading(true)
     fetchDetail().finally(() => setLoading(false))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pairId])
 
   const {

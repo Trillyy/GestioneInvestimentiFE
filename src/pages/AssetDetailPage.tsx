@@ -66,7 +66,6 @@ export default function AssetDetailPage() {
         .then((res) => setAssetHoldings(res.data))
         .catch(() => {}),
     ]).finally(() => setLoading(false))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assetId])
 
   const {

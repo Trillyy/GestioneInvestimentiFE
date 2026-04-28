@@ -104,7 +104,7 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     void fetchTransactions(page)
-  }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [page])
 
   useEffect(() => {
     listPortfolios()
