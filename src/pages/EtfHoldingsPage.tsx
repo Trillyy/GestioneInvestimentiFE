@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { genericParser, iSharesParser, franklinTempletonParser, xtrackersParser, amundiParser, spdrParser, type IssuerParser } from '@/lib/parsers'
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, Legend } from 'recharts'
+import { CustomPieChart, type ChartSlice } from '@/components/custom-pie-chart'
 import { getHoldings, listAssets, saveHoldings } from '@/api/assets'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Combobox } from '@/components/ui/combobox'
@@ -23,14 +23,6 @@ import type { AssetResponse, EtfHoldingResponse, HoldingItem } from '@/types/api
 
 // ─── Chart helpers ────────────────────────────────────────────────────────────
 
-const CHART_COLORS = [
-  '#6366f1', '#8b5cf6', '#a855f7', '#ec4899', '#f43f5e',
-  '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9',
-  '#3b82f6', '#64748b',
-]
-
-interface ChartSlice { name: string; value: number }
-
 function buildChartData(
   holdings: EtfHoldingResponse[],
   key: 'sectorName' | 'countryName',
@@ -43,46 +35,6 @@ function buildChartData(
   return Array.from(map.entries())
     .map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 }))
     .sort((a, b) => b.value - a.value)
-}
-
-function HoldingsPieChart({ data, title }: { data: ChartSlice[]; title: string }) {
-  if (data.length === 0) return null
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey="value"
-              nameKey="name"
-              cx="50%"
-              cy="50%"
-              outerRadius={100}
-              label={({ value }: { value?: number }) => value != null ? `${value.toFixed(2)}%` : ''}
-              labelLine={false}
-            >
-              {data.map((_, i) => (
-                <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip formatter={(v) => typeof v === 'number' ? `${v.toFixed(2)}%` : v} />
-            <Legend
-              layout="vertical"
-              align="right"
-              verticalAlign="middle"
-              formatter={(value: string) => (
-                <span className="text-xs">{value}</span>
-              )}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
-  )
 }
 
 // ─── Issuer registry ─────────────────────────────────────────────────────────
@@ -370,13 +322,17 @@ export default function EtfHoldingsPage() {
       {/* Charts */}
       {holdings.length > 0 && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <HoldingsPieChart
+          <CustomPieChart
             title="Allocazione per Settore"
             data={buildChartData(holdings, 'sectorName')}
+            height={300}
+            outerRadius={100}
           />
-          <HoldingsPieChart
+          <CustomPieChart
             title="Allocazione per Paese"
             data={buildChartData(holdings, 'countryName')}
+            height={300}
+            outerRadius={100}
           />
         </div>
       )}

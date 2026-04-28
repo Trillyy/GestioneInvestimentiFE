@@ -1,17 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts'
 import { getCurrencyPairDetail } from '@/api/exchangeRates'
+import { CustomLineChart } from '@/components/custom-line-chart'
 import { InfoRow } from '@/components/ui/info-row'
 import { fmtDate, TODAY } from '@/lib/formatters'
 import { useChartWindow } from '@/hooks/useChartWindow'
@@ -19,66 +10,6 @@ import { ChartWindowPicker } from '@/components/chart-window-picker'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { CurrencyPairDetailResponse, RatePoint } from '@/types/api'
-
-// ─── Rate Chart ───────────────────────────────────────────────────────────────
-
-function RateLineChart({ data }: { data: RatePoint[] }) {
-  if (data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
-        Nessun dato disponibile per il periodo selezionato
-      </div>
-    )
-  }
-
-  const rates = data.map((d) => d.rate)
-  const minRate = Math.min(...rates)
-  const maxRate = Math.max(...rates)
-  const padding = (maxRate - minRate) * 0.05 || 0.001
-
-  return (
-    <ResponsiveContainer width="100%" height={280}>
-      <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-        <XAxis
-          dataKey="date"
-          tickFormatter={(v: string) =>
-            new Date(v).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })
-          }
-          tick={{ fontSize: 11 }}
-          tickLine={false}
-          interval="preserveStartEnd"
-        />
-        <YAxis
-          domain={[minRate - padding, maxRate + padding]}
-          tick={{ fontSize: 11 }}
-          tickLine={false}
-          axisLine={false}
-          tickFormatter={(v: number) => v.toFixed(4)}
-          width={70}
-        />
-        <Tooltip
-          formatter={(v: number) => [v.toFixed(6), 'Tasso']}
-          labelFormatter={(label: string) => new Date(label).toLocaleDateString('it-IT')}
-        />
-        <Legend
-          formatter={(value: string) => (
-            <span className="text-xs">{value}</span>
-          )}
-        />
-        <Line
-          type="monotone"
-          dataKey="rate"
-          name="Tasso"
-          stroke="#6366f1"
-          strokeWidth={2}
-          dot={false}
-          activeDot={{ r: 4 }}
-        />
-      </LineChart>
-    </ResponsiveContainer>
-  )
-}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -209,7 +140,15 @@ export default function ExchangeRateDetailPage() {
           />
         </CardHeader>
         <CardContent>
-          <RateLineChart data={chartData} />
+          <CustomLineChart
+            data={chartData as Record<string, unknown>[]}
+            lines={[{ dataKey: 'rate', name: 'Tasso', color: '#6366f1' }]}
+            yAxisWidth={70}
+            yAxisTickFormatter={(v) => v.toFixed(4)}
+            tooltipValueFormatter={(v) => v.toFixed(6)}
+            computeDomain
+            domainPaddingFallback={0.001}
+          />
         </CardContent>
       </Card>
     </div>

@@ -2,19 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { toast } from 'sonner'
-import {
-  CartesianGrid,
-  Cell,
-  Legend,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
+import { CustomLineChart } from '@/components/custom-line-chart'
+import { CustomPieChart, type ChartSlice } from '@/components/custom-pie-chart'
 import {
   addBenchmark,
   addOperation,
@@ -115,13 +104,6 @@ const OPERATION_STATUSES: PensionOperationStatus[] = ['INVESTED', 'INVESTING', '
 
 // ─── Chart ───────────────────────────────────────────────────────────────────
 
-const CHART_COLORS = [
-  '#6366f1', '#8b5cf6', '#a855f7', '#ec4899', '#f43f5e',
-  '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9',
-]
-
-interface ChartSlice { name: string; value: number }
-
 function buildTypeData(items: PensionFundBenchmarkResponse[]): ChartSlice[] {
   const map = new Map<string, number>()
   for (const b of items) {
@@ -142,171 +124,7 @@ function buildHedgeData(items: PensionFundBenchmarkResponse[]): ChartSlice[] {
   ]
 }
 
-function BenchmarkPieChart({
-  data,
-  title,
-  unit = '%',
-}: {
-  data: ChartSlice[]
-  title: string
-  unit?: '%' | 'EUR'
-}) {
-  if (data.length === 0) return null
-  const fmtLabel = (value?: number, percent?: number) => {
-    if (unit === 'EUR') return percent != null ? `${(percent * 100).toFixed(1)}%` : ''
-    return value != null ? `${value.toFixed(1)}%` : ''
-  }
-  const fmtTooltip = (v: unknown) => {
-    if (typeof v !== 'number') return v
-    return unit === 'EUR' ? `${fmtNum(v)} EUR` : `${v.toFixed(2)}%`
-  }
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={260}>
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey="value"
-              nameKey="name"
-              cx="50%"
-              cy="50%"
-              outerRadius={85}
-              label={({ value, percent }: { value?: number; percent?: number }) => fmtLabel(value, percent)}
-              labelLine={false}
-            >
-              {data.map((_, i) => (
-                <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip formatter={fmtTooltip} />
-            <Legend
-              layout="vertical"
-              align="right"
-              verticalAlign="middle"
-              formatter={(value: string) => <span className="text-xs">{value}</span>}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
-  )
-}
-
-function NavLineChart({ data }: { data: PensionFundNavResponse[] }) {
-  if (data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
-        Nessun valore quota disponibile
-      </div>
-    )
-  }
-  const sorted = [...data].reverse()
-  const values = sorted.map((d) => d.navValue)
-  const min = Math.min(...values)
-  const max = Math.max(...values)
-  const pad = (max - min) * 0.05 || 0.01
-
-  return (
-    <ResponsiveContainer width="100%" height={280}>
-      <LineChart data={sorted} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-        <XAxis
-          dataKey="navDate"
-          tickFormatter={(v: string) =>
-            new Date(v).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })
-          }
-          tick={{ fontSize: 11 }}
-          tickLine={false}
-          interval="preserveStartEnd"
-        />
-        <YAxis
-          domain={[min - pad, max + pad]}
-          tick={{ fontSize: 11 }}
-          tickLine={false}
-          axisLine={false}
-          tickFormatter={(v: number) => v.toFixed(4)}
-          width={72}
-        />
-        <Tooltip
-          formatter={(v: number) => [v.toFixed(4), 'NAV']}
-          labelFormatter={(label: string) => new Date(label).toLocaleDateString('it-IT')}
-        />
-        <Line
-          type="monotone"
-          dataKey="navValue"
-          name="NAV"
-          stroke="#6366f1"
-          strokeWidth={2}
-          dot={false}
-          activeDot={{ r: 4 }}
-        />
-      </LineChart>
-    </ResponsiveContainer>
-  )
-}
-
 type HoldingPoint = { date: string; versato: number; complessivo: number | undefined }
-
-function HoldingLineChart({ data }: { data: HoldingPoint[] }) {
-  if (data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
-        Nessun dato storico disponibile
-      </div>
-    )
-  }
-  return (
-    <ResponsiveContainer width="100%" height={280}>
-      <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-        <XAxis
-          dataKey="date"
-          tickFormatter={(v: string) =>
-            new Date(v).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' })
-          }
-          tick={{ fontSize: 11 }}
-          tickLine={false}
-          interval="preserveStartEnd"
-        />
-        <YAxis
-          tick={{ fontSize: 11 }}
-          tickLine={false}
-          axisLine={false}
-          tickFormatter={(v: number) => fmtNum(v, 0)}
-          width={80}
-        />
-        <Tooltip
-          formatter={(v: number, name: string) => [`${fmtNum(v)} EUR`, name]}
-          labelFormatter={(label: string) => new Date(label).toLocaleDateString('it-IT')}
-        />
-        <Legend formatter={(value: string) => <span className="text-xs">{value}</span>} />
-        <Line
-          type="monotone"
-          dataKey="versato"
-          name="Versato"
-          stroke="#8b5cf6"
-          strokeWidth={2}
-          dot={false}
-          activeDot={{ r: 4 }}
-        />
-        <Line
-          type="monotone"
-          dataKey="complessivo"
-          name="Complessivo"
-          stroke="#6366f1"
-          strokeWidth={2}
-          dot={false}
-          activeDot={{ r: 4 }}
-          connectNulls
-        />
-      </LineChart>
-    </ResponsiveContainer>
-  )
-}
 
 // ─── Form types ───────────────────────────────────────────────────────────────
 
@@ -744,13 +562,24 @@ const [deleteOpTarget, setDeleteOpTarget] = useState<PensionFundOperationRespons
                 <CardTitle className="text-base">Andamento del Fondo</CardTitle>
               </CardHeader>
               <CardContent>
-                <HoldingLineChart data={holdingLineData} />
+                <CustomLineChart
+                  data={holdingLineData as Record<string, unknown>[]}
+                  lines={[
+                    { dataKey: 'versato', name: 'Versato', color: '#8b5cf6' },
+                    { dataKey: 'complessivo', name: 'Complessivo', color: '#6366f1', connectNulls: true },
+                  ]}
+                  yAxisWidth={80}
+                  yAxisTickFormatter={(v) => fmtNum(v, 0)}
+                  tooltipValueFormatter={(v) => `${fmtNum(v)} EUR`}
+                  showYear
+                  emptyMessage="Nessun dato storico disponibile"
+                />
               </CardContent>
             </Card>
           )}
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <BenchmarkPieChart data={contributionPieData} title="Composizione Contributi" unit="EUR" />
+            <CustomPieChart data={contributionPieData} title="Composizione Contributi" unit="EUR" height={260} outerRadius={85} />
             <Card>
               <CardHeader className="border-b">
                 <CardTitle>Dettaglio Contributi</CardTitle>
@@ -806,8 +635,8 @@ const [deleteOpTarget, setDeleteOpTarget] = useState<PensionFundOperationRespons
 
           {benchmark.length > 0 && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <BenchmarkPieChart data={buildTypeData(benchmark)} title="Allocazione per Tipo" />
-              <BenchmarkPieChart data={buildHedgeData(benchmark)} title="Copertura Valutaria" />
+              <CustomPieChart data={buildTypeData(benchmark)} title="Allocazione per Tipo" height={260} outerRadius={85} />
+              <CustomPieChart data={buildHedgeData(benchmark)} title="Copertura Valutaria" height={260} outerRadius={85} />
             </div>
           )}
 
@@ -1084,7 +913,17 @@ const [deleteOpTarget, setDeleteOpTarget] = useState<PensionFundOperationRespons
                   )}
                 </CardHeader>
                 <CardContent>
-                  <NavLineChart data={filtered} />
+                  <CustomLineChart
+                    data={[...filtered].reverse() as Record<string, unknown>[]}
+                    xKey="navDate"
+                    lines={[{ dataKey: 'navValue', name: 'NAV', color: '#6366f1' }]}
+                    yAxisWidth={72}
+                    yAxisTickFormatter={(v) => v.toFixed(4)}
+                    tooltipValueFormatter={(v) => v.toFixed(4)}
+                    computeDomain
+                    domainPaddingFallback={0.01}
+                    emptyMessage="Nessun valore quota disponibile"
+                  />
                 </CardContent>
               </Card>
             )

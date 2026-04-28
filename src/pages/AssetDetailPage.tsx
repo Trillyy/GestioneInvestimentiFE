@@ -1,17 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts'
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import { CustomLineChart } from '@/components/custom-line-chart'
 import { getAssetDetail } from '@/api/assets'
 import { getHoldingsByAsset } from '@/api/holdings'
 import { ASSET_TYPE_LABELS, ASSET_TYPE_VARIANT } from '@/lib/assetTypes'
@@ -59,63 +50,6 @@ const COUPON_FREQ_LABELS: Record<number, string> = {
 
 // ─── Price Chart ──────────────────────────────────────────────────────────────
 
-function PriceLineChart({ data }: { data: PricePoint[] }) {
-  if (data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
-        Nessun dato disponibile per il periodo selezionato
-      </div>
-    )
-  }
-
-  const minPrice = Math.min(...data.map((d) => d.price))
-  const maxPrice = Math.max(...data.map((d) => d.price))
-  const padding = (maxPrice - minPrice) * 0.05 || 1
-
-  return (
-    <ResponsiveContainer width="100%" height={280}>
-      <LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-        <XAxis
-          dataKey="date"
-          tickFormatter={(v: string) => {
-            const d = new Date(v)
-            return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })
-          }}
-          tick={{ fontSize: 11 }}
-          tickLine={false}
-          interval="preserveStartEnd"
-        />
-        <YAxis
-          domain={[minPrice - padding, maxPrice + padding]}
-          tick={{ fontSize: 11 }}
-          tickLine={false}
-          axisLine={false}
-          tickFormatter={(v: number) => v.toFixed(2)}
-          width={60}
-        />
-        <Tooltip
-          formatter={(v: number) => [v.toFixed(4), 'Prezzo']}
-          labelFormatter={(label: string) => new Date(label).toLocaleDateString('it-IT')}
-        />
-        <Legend
-          formatter={(value: string) => (
-            <span className="text-xs">{value}</span>
-          )}
-        />
-        <Line
-          type="monotone"
-          dataKey="price"
-          name="Prezzo"
-          stroke="#6366f1"
-          strokeWidth={2}
-          dot={false}
-          activeDot={{ r: 4 }}
-        />
-      </LineChart>
-    </ResponsiveContainer>
-  )
-}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -578,7 +512,13 @@ export default function AssetDetailPage() {
           />
         </CardHeader>
         <CardContent>
-          <PriceLineChart data={chartData} />
+          <CustomLineChart
+            data={chartData as Record<string, unknown>[]}
+            lines={[{ dataKey: 'price', name: 'Prezzo', color: '#6366f1' }]}
+            yAxisTickFormatter={(v) => v.toFixed(2)}
+            tooltipValueFormatter={(v) => v.toFixed(4)}
+            computeDomain
+          />
         </CardContent>
       </Card>
     </div>
