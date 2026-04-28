@@ -87,12 +87,17 @@ Single file for all API types.
 
 **Pension fund types:** `PensionFundResponse`, `PensionFundBenchmarkResponse`, `PensionFundNavResponse`, `PensionFundOperationResponse`, `PensionFundHoldingResponse`, `PensionFundOperationImportResult`.
 
-### Shared utilities (`src/lib/`)
+### Domain helpers (`src/helpers/`)
 
-- **`formatters.ts`** — All number/date/percentage formatting with `it-IT` locale. Exports: `fmtNum`, `fmtCurrency`, `formatPct`, `formatSignedAmount`, `formatSignedPct`, `fmtDate`, `TODAY`, `isDateRecent()`, `pnlColorClass()`, `ChartWindow` type, `WINDOW_LABELS` record. Import from here, never format inline.
-- **`assetTypes.ts`** — `ASSET_TYPE_LABELS`, `ASSET_TYPE_VARIANT` (badge variants), `ASSET_TYPES` array.
-- **`transactionTypes.ts`** — `TRANSACTION_TYPE_LABELS`, `TRANSACTION_TYPE_VARIANT`, `TRANSACTION_TYPES` array.
-- **`utils.ts`** — `cn()` combining `clsx` + `tailwind-merge`.
+- **`formatters.ts`** — All number/date/percentage formatting with `it-IT` locale. Exports: `fmtNum`, `fmtCurrency`, `formatPct`, `formatSignedAmount`, `formatSignedPct`, `fmtDate`, `TODAY`, `isDateRecent()`, `pnlColorClass()`, `ChartWindow` type, `WINDOW_LABELS` record, `getWindowDates()`. Import from here, never format inline.
+- **`assetTypes.ts`** — `ASSET_TYPE_LABELS`, `ASSET_TYPE_VARIANT` (badge variants), `ASSET_TYPES`; `REPLICATION_LABELS`, `REPLICATION_METHODS`; `DISTRIBUTION_LABELS`, `DISTRIBUTION_TYPES`; `COUPON_FREQ_LABELS`; `getIssuer(asset)`.
+- **`transactionTypes.ts`** — `TRANSACTION_TYPE_LABELS`, `TRANSACTION_TYPE_VARIANT`, `TRANSACTION_TYPES`; `NEEDS_ASSET` (types requiring asset selection); `HAS_QTY_PRICE` (types with quantity + unit price).
+- **`pensionFundTypes.ts`** — `BENCHMARK_TYPE_LABELS`, `BENCHMARK_TYPES`; `OPERATION_TYPE_LABELS`, `OPERATION_TYPES`; `OPERATION_STATUS_LABELS`, `OPERATION_STATUSES`.
+- **`chartHelpers.ts`** — `buildChartData(holdings, key)` aggregates `EtfHoldingResponse[]` by sector/country into `ChartSlice[]`; `buildTypeData(benchmarks)` and `buildHedgeData(benchmarks)` aggregate `PensionFundBenchmarkResponse[]` for pie charts.
+
+### General utilities (`src/lib/`)
+
+- **`utils.ts`** — `cn()` combining `clsx` + `tailwind-merge`; `toNum(s)` converts a string to `number | undefined`.
 - **`parsers/`** — CSV/XLSX parsers for ETF constituent data. Each implements `IssuerParser` (`{ label, parse, hint }`) with `parse(file)` returning `{ holdings, validFrom? }`.
 
 Supported parsers: `genericParser`, `iSharesParser`, `franklinTempletonParser`, `xtrackersParser`, `amundiParser`, `spdrParser`.
