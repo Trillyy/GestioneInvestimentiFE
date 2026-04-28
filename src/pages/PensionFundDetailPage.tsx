@@ -62,6 +62,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TableLoadingRows } from '@/components/ui/table-loading-rows'
 import type {
   BenchmarkType,
   PensionFundBenchmarkResponse,
@@ -823,14 +824,8 @@ const [deleteOpTarget, setDeleteOpTarget] = useState<PensionFundOperationRespons
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {benchmark.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      Nessun componente benchmark
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  benchmark.map((b) => (
+                <TableLoadingRows loading={false} empty={benchmark.length === 0} colSpan={6} emptyMessage="Nessun componente benchmark" />
+                {benchmark.map((b) => (
                     <TableRow key={b.id}>
                       <TableCell className="font-medium">{b.name}</TableCell>
                       <TableCell>
@@ -852,8 +847,7 @@ const [deleteOpTarget, setDeleteOpTarget] = useState<PensionFundOperationRespons
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
+                ))}
               </TableBody>
             </Table>
           </div>
@@ -948,14 +942,8 @@ const [deleteOpTarget, setDeleteOpTarget] = useState<PensionFundOperationRespons
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {operations.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      Nessuna operazione
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  operations.map((op) => (
+                <TableLoadingRows loading={false} empty={operations.length === 0} colSpan={8} emptyMessage="Nessuna operazione" />
+                {operations.map((op) => (
                     <TableRow key={op.id}>
                       <TableCell className="whitespace-nowrap">{fmtDate(op.operationDate)}</TableCell>
                       <TableCell>
@@ -989,8 +977,7 @@ const [deleteOpTarget, setDeleteOpTarget] = useState<PensionFundOperationRespons
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
+                ))}
               </TableBody>
             </Table>
           </div>

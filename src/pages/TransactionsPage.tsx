@@ -28,6 +28,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { TableLoadingRows } from '@/components/ui/table-loading-rows'
+import { PaginationControls } from '@/components/ui/pagination-controls'
 import type { AssetResponse, PortfolioResponse, TransactionCreateRequest, TransactionResponse, TransactionType } from '@/types/api'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -223,20 +225,8 @@ export default function TransactionsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={10} className="text-center py-10 text-muted-foreground">
-                  Caricamento…
-                </TableCell>
-              </TableRow>
-            ) : transactions.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={10} className="text-center py-10 text-muted-foreground">
-                  Nessuna transazione trovata
-                </TableCell>
-              </TableRow>
-            ) : (
-              transactions.map((tx) => (
+            <TableLoadingRows loading={loading} empty={transactions.length === 0} colSpan={10} emptyMessage="Nessuna transazione trovata" />
+            {!loading && transactions.map((tx) => (
                 <TableRow key={tx.id}>
                   <TableCell className="whitespace-nowrap">{fmtDate(tx.transactionDate)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{tx.portfolioName}</TableCell>
@@ -282,8 +272,7 @@ export default function TransactionsPage() {
                     )}
                   </TableCell>
                 </TableRow>
-              ))
-            )}
+            ))}
           </TableBody>
         </Table>
       </div>
@@ -295,19 +284,7 @@ export default function TransactionsPage() {
             ? `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, totalElements)} di ${totalElements} elementi`
             : '0 elementi'}
         </span>
-        {totalPages > 1 && (
-          <div className="flex items-center gap-3">
-            <span>Pagina {page + 1} di {totalPages}</span>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
-                Precedente
-              </Button>
-              <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>
-                Successiva
-              </Button>
-            </div>
-          </div>
-        )}
+        <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
       {/* Create Sheet */}

@@ -13,13 +13,11 @@ import {
 } from 'recharts'
 import { getCurrencyPairDetail } from '@/api/exchangeRates'
 import { InfoRow } from '@/components/ui/info-row'
-import { type ChartWindow, fmtDate, TODAY, WINDOW_LABELS} from '@/lib/formatters'
+import { fmtDate, TODAY } from '@/lib/formatters'
+import { useChartWindow } from '@/hooks/useChartWindow'
+import { ChartWindowPicker } from '@/components/chart-window-picker'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
 import type { CurrencyPairDetailResponse, RatePoint } from '@/types/api'
 
 // ─── Rate Chart ───────────────────────────────────────────────────────────────
@@ -90,11 +88,6 @@ export default function ExchangeRateDetailPage() {
 
   const [pair, setPair] = useState<CurrencyPairDetailResponse | null>(null)
   const [loading, setLoading] = useState(true)
-  const [window, setWindow] = useState<ChartWindow>('month')
-  const [from, setFrom] = useState('')
-  const [to, setTo] = useState('')
-  const [customLoading, setCustomLoading] = useState(false)
-
   async function fetchDetail(opts?: { from?: string; to?: string }) {
     try {
       const res = await getCurrencyPairDetail(pairId, opts?.from, opts?.to)
@@ -110,37 +103,14 @@ export default function ExchangeRateDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pairId])
 
-  async function handleWindowChange(w: ChartWindow) {
-    setWindow(w)
-    if (w === 'ytd') {
-      const today = new Date()
-      const jan1 = `${today.getFullYear()}-01-01`
-      const todayStr = today.toISOString().slice(0, 10)
-      setCustomLoading(true)
-      try { await fetchDetail({ from: jan1, to: todayStr }) }
-      finally { setCustomLoading(false) }
-    } else if (w === 'alltime') {
-      const todayStr = new Date().toISOString().slice(0, 10)
-      setCustomLoading(true)
-      try { await fetchDetail({ from: '1900-01-01', to: todayStr }) }
-      finally { setCustomLoading(false) }
-    }
-    // week/month/year are pre-fetched in the response, no extra call needed
-  }
-
-  async function handleCustomSearch() {
-    if (!from || !to) {
-      toast.error('Inserisci entrambe le date')
-      return
-    }
-    setCustomLoading(true)
-    setWindow('custom')
-    try {
-      await fetchDetail({ from, to })
-    } finally {
-      setCustomLoading(false)
-    }
-  }
+  const {
+    window,
+    from, setFrom,
+    to, setTo,
+    customLoading,
+    handleWindowChange,
+    handleCustomSearch,
+  } = useChartWindow((from, to) => fetchDetail({ from, to }))
 
   if (loading) {
     return (
@@ -227,48 +197,16 @@ export default function ExchangeRateDetailPage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Storico Tassi di Cambio</CardTitle>
 
-          <div className="flex gap-1 mt-2 flex-wrap">
-            {(['week', 'month', 'year', 'ytd', 'alltime', 'custom'] as ChartWindow[]).map((w) => (
-              <Button
-                key={w}
-                variant={window === w ? 'default' : 'outline'}
-                size="xs"
-                disabled={customLoading}
-                onClick={() => void handleWindowChange(w)}
-              >
-                {WINDOW_LABELS[w]}
-              </Button>
-            ))}
-          </div>
-
-          {window === 'custom' && (
-            <>
-              <Separator className="mt-3" />
-              <div className="flex items-end gap-3 mt-3 flex-wrap">
-                <div className="space-y-1">
-                  <Label className="text-xs">Dal</Label>
-                  <Input
-                    type="date"
-                    value={from}
-                    onChange={(e) => setFrom(e.target.value)}
-                    className="h-8 w-36"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Al</Label>
-                  <Input
-                    type="date"
-                    value={to}
-                    onChange={(e) => setTo(e.target.value)}
-                    className="h-8 w-36"
-                  />
-                </div>
-                <Button size="sm" onClick={() => void handleCustomSearch()} disabled={customLoading}>
-                  {customLoading ? 'Caricamento…' : 'Cerca'}
-                </Button>
-              </div>
-            </>
-          )}
+          <ChartWindowPicker
+            window={window}
+            customLoading={customLoading}
+            from={from}
+            to={to}
+            onFromChange={setFrom}
+            onToChange={setTo}
+            onWindowChange={handleWindowChange}
+            onCustomSearch={handleCustomSearch}
+          />
         </CardHeader>
         <CardContent>
           <RateLineChart data={chartData} />

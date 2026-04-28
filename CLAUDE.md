@@ -16,47 +16,112 @@ No test suite is configured.
 
 ## Environment
 
-Two env variables, both optional (defaults are in `src/api/client.ts`):
+Two env variables per environment (`local` / `prod`), all optional (defaults are in `src/api/client.ts`):
 
 ```
-VITE_API_BASE_URL   # defaults to http://localhost:8080/gestioneinvestimenti
-VITE_API_TOKEN      # sent as X-API-Token header on every request
+VITE_API_BASE_URL_LOCAL   # local backend base URL
+VITE_API_BASE_URL_PROD    # production backend base URL
+VITE_API_TOKEN_LOCAL      # X-API-Token for local
+VITE_API_TOKEN_PROD       # X-API-Token for prod
 ```
 
-The backend is a Spring Boot app. No userId is sent from the frontend — the server resolves identity from the token.
+The active server environment is stored in localStorage under key `gi_server` (`'local' | 'prod'`) and exposed via `ServerContext` (`src/context/ServerContext.tsx`). The Axios client reads from this context on every request. The backend is a Spring Boot app — identity is resolved from the token, no userId is sent from the frontend.
 
 ## Architecture
 
 ### Entry point & routing
 
-`src/main.tsx` → `RouterProvider` → `src/router/index.tsx` (React Router v7 `createBrowserRouter`).  
+`src/main.tsx` → `ServerProvider` → `RouterProvider` → `src/router/index.tsx` (React Router v7 `createBrowserRouter`).  
 All pages are nested under `RootLayout` (Navbar + Outlet + Footer + Toaster). The 404 handler is a sibling route outside the layout.
 
-Routes: `/` (dashboard), `/assets`, `/assets/:id`, `/assets/:id/holdings` (ETF constituents), `/exchange-rates`, `/exchange-rates/:id`, `/transactions`.
+Routes:
+
+| Path | Component |
+|------|-----------|
+| `/` | `HomePage` — portfolio dashboard, value chart, P&L metrics |
+| `/assets` | `AssetsPage` — paginated list with create sheet, type filter |
+| `/assets/:id` | `AssetDetailPage` — detail with price chart and holdings card |
+| `/assets/:id/holdings` | `EtfHoldingsPage` — ETF constituent holdings with parser upload |
+| `/exchange-rates` | `ExchangeRatesPage` — currency pairs list, create, sync |
+| `/exchange-rates/:id` | `ExchangeRateDetailPage` — rate chart for a currency pair |
+| `/transactions` | `TransactionsPage` — paginated history, filters by type/portfolio |
+| `/pension-funds` | `PensionFundsPage` — list of pension funds, create |
+| `/pension-funds/:id` | `PensionFundDetailPage` — operations, benchmarks, NAV, holdings |
 
 ### API layer (`src/api/`)
 
-One Axios instance in `client.ts`. Domain modules (`assets.ts`, `holdings.ts`, `transactions.ts`, `portfolios.ts`, `exchangeRates.ts`) each export plain async functions.  
+One Axios instance in `client.ts` (`apiClient`). Domain modules each export plain async functions.
 
 Every response is typed as `ApiResponse<T>` (`{ success, message, data, timestamp }`). Paginated responses unwrap to `PagedResponse<T>` which has `content[]` plus metadata. Call sites access `.data` (and `.data.content` for pages).
 
+| Module | Key exports |
+|--------|-------------|
+| `assets.ts` | `listAssets`, `createAsset`, `getAssetDetail`, `listAllAssets`, `listSectors`, `syncPrices`, `getHoldings`, `saveHoldings` |
+| `holdings.ts` | `listHoldings(portfolioId?)`, `getHoldingsByAsset(assetId)` |
+| `portfolios.ts` | `listPortfolios()` |
+| `transactions.ts` | `listTransactions`, `createTransaction` |
+| `exchangeRates.ts` | `listCurrencyPairs`, `createCurrencyPair`, `getCurrencyPairDetail`, `syncExchangeRates` |
+| `pensionFunds.ts` | `listPensionFunds`, `createPensionFund`, `getPensionFund`, `updatePensionFund`, `deletePensionFund`, `listBenchmark`, `addBenchmark`, `deleteBenchmark`, `listOperations`, `addOperation`, `deleteOperation`, `importOperations`, `listNav`, `syncNav`, `getHolding` |
+| `portfolioValueHistory.ts` | `getPortfolioValueHistory(portfolioId?, from?, to?)` |
+
 ### Type system (`src/types/api.ts`)
 
-Single file for all API types. Asset type polymorphism: `AssetResponse` has four nullable detail objects (`stockDetail`, `etfDetail`, `bondDetail`, `cryptoDetail`) — only the relevant one is populated. `AssetDetailResponse` extends this with price chart data and an `AssetHoldingDetail[]` for the holdings card on the detail page.
+Single file for all API types.
 
-Key enums (string unions, not TS enums): `AssetType`, `TransactionType`, `ReplicationMethod`, `DistributionType`.
+**Generic wrappers:** `ApiResponse<T>`, `PagedResponse<T>`
+
+**String unions (not TS enums):**
+- `AssetType`: `'STOCK' | 'ETF' | 'FUND' | 'BOND' | 'CRYPTO'`
+- `TransactionType`: `'BUY' | 'SELL' | 'DIVIDEND' | 'INTEREST' | 'SPLIT' | 'TRANSFER_IN' | 'TRANSFER_OUT' | 'FEE'`
+- `ReplicationMethod`: `'PHYSICAL_FULL' | 'PHYSICAL_SAMPLING' | 'SYNTHETIC'`
+- `DistributionType`: `'ACCUMULATING' | 'DISTRIBUTING'`
+- `PriceType`: `'CLOSE' | 'OPEN' | 'ADJUSTED_CLOSE' | 'NAV'`
+- `BenchmarkType`: `'EQUITY' | 'BOND' | 'COMMODITY' | 'REAL_ESTATE' | 'CASH' | 'MIXED' | 'OTHER'`
+- `PensionOperationType`: `'VOLUNTARY_CONTRIBUTION' | 'COMPANY_CONTRIBUTION' | 'TFR' | 'MEMBERSHIP_FEE' | 'OTHER_CONTRIBUTION' | 'ADVANCE'`
+- `PensionOperationStatus`: `'INVESTED' | 'INVESTING' | 'PAYED'`
+- `CouponFrequency`: `1 | 2 | 4 | 12`
+
+**Asset polymorphism:** `AssetResponse` has four nullable detail objects (`stockDetail`, `etfDetail`, `bondDetail`, `cryptoDetail`) — only the relevant one is populated. `AssetDetailResponse` extends this with `priceChart` and `displayCurrencyCode`.
+
+**Portfolio value history:** `PortfolioValueHistoryDetailResponse` → `{ latestSnapshot: LatestSnapshot, series: SnapshotPoint[] }`. Each `SnapshotPoint` has `totalValue`, `totalInvested`, `unrealizedPnl`, `unrealizedPnlPct`, `realizedPnl`, `snapshotDate`.
+
+**Pension fund types:** `PensionFundResponse`, `PensionFundBenchmarkResponse`, `PensionFundNavResponse`, `PensionFundOperationResponse`, `PensionFundHoldingResponse`, `PensionFundOperationImportResult`.
 
 ### Shared utilities (`src/lib/`)
 
-- **`formatters.ts`** — All number/date/percentage formatting with `it-IT` locale. Also exports `ChartWindow` type, `WINDOW_LABELS` record, `TODAY` constant, `isDateRecent()`, and `pnlColorClass()`. Import from here rather than formatting inline.
-- **`assetTypes.ts`** — `ASSET_TYPE_LABELS`, `ASSET_TYPE_VARIANT` (badge variants), `ASSET_TYPES` array. Use these everywhere to keep labels consistent.
-- **`transactionTypes.ts`** — Same pattern for `TransactionType`.
+- **`formatters.ts`** — All number/date/percentage formatting with `it-IT` locale. Exports: `fmtNum`, `fmtCurrency`, `formatPct`, `formatSignedAmount`, `formatSignedPct`, `fmtDate`, `TODAY`, `isDateRecent()`, `pnlColorClass()`, `ChartWindow` type, `WINDOW_LABELS` record. Import from here, never format inline.
+- **`assetTypes.ts`** — `ASSET_TYPE_LABELS`, `ASSET_TYPE_VARIANT` (badge variants), `ASSET_TYPES` array.
+- **`transactionTypes.ts`** — `TRANSACTION_TYPE_LABELS`, `TRANSACTION_TYPE_VARIANT`, `TRANSACTION_TYPES` array.
 - **`utils.ts`** — `cn()` combining `clsx` + `tailwind-merge`.
-- **`parsers/`** — CSV/XLSX parsers for ETF constituent data from specific issuers (iShares, Amundi, Xtrackers, etc.). Each implements `IssuerParser` with a `parse(file)` method returning `{ holdings, validFrom? }`.
+- **`parsers/`** — CSV/XLSX parsers for ETF constituent data. Each implements `IssuerParser` (`{ label, parse, hint }`) with `parse(file)` returning `{ holdings, validFrom? }`.
+
+Supported parsers: `genericParser`, `iSharesParser`, `franklinTempletonParser`, `xtrackersParser`, `amundiParser`, `spdrParser`.
 
 ### UI components (`src/components/ui/`)
 
-Shadcn-style wrappers over `@base-ui/react`. Use `cn()` for class merging. `InfoRow` is a label+value display primitive used in detail cards — it returns `null` when value is empty/null/undefined.
+Shadcn-style wrappers over `@base-ui/react`. Use `cn()` for class merging.
+
+`badge`, `button`, `card`, `checkbox`, `combobox`, `dialog`, `form`, `info-row`, `input`, `label`, `navigation-menu`, `select`, `separator`, `sheet`, `sonner`, `table`, `tabs`, `textarea`
+
+`InfoRow` is a label+value display primitive used in detail cards — returns `null` when value is empty/null/undefined.
+
+`TableLoadingRows` renders a single "Caricamento…" or empty-message row inside a `<TableBody>` — use instead of inline ternaries:
+```tsx
+<TableBody>
+  <TableLoadingRows loading={loading} empty={items.length === 0} colSpan={N} emptyMessage="..." />
+  {!loading && items.map(...)}
+</TableBody>
+```
+
+`PaginationControls` renders "Pagina X di Y + Precedente/Successiva" — returns `null` when `totalPages <= 1`.
+
+### Shared hooks (`src/hooks/`)
+
+- **`useChartWindow(onFetch, initialWindow?)`** — manages `window`, `from`/`to` custom dates, `customLoading`. `onFetch(from, to)` is called automatically for `ytd`/`alltime`/`custom` windows. Returns `{ window, setWindow, from, setFrom, to, setTo, customLoading, handleWindowChange, handleCustomSearch }`. Week/month/year are pre-loaded in the API response and do not trigger `onFetch`.
+
+### Shared components (`src/components/`)
+
+- **`ChartWindowPicker`** — renders the window-selector tab row plus the custom date range inputs + "Cerca" button. Used in `AssetDetailPage`, `ExchangeRateDetailPage`, and `HomePage`. Pair with `useChartWindow` for the logic.
 
 ### Page patterns
 
@@ -65,8 +130,9 @@ Pages manage their own state with `useState` + `useEffect`. No global state. The
 2. Filter/search is client-side when full list is small, or passed as query params when paginated.
 3. Element count is shown below every table as `<p className="text-sm text-muted-foreground">`.
 4. "Reimposta" reset button appears alongside filters when any filter is active.
+5. Tables use `<TableLoadingRows>` for loading/empty states; pagination uses `<PaginationControls>`.
 
-Chart windows (`week`/`month`/`year` are pre-fetched in the initial detail response; `ytd` and `custom` trigger a second fetch with explicit date params).
+Chart windows (`week`/`month`/`year`) are pre-fetched in the initial detail response; `ytd`, `alltime`, and `custom` trigger a second fetch with explicit date params. Use `useChartWindow` + `ChartWindowPicker` for this pattern.
 
 ### Styling
 

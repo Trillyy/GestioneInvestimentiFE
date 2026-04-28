@@ -37,6 +37,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { TableLoadingRows } from '@/components/ui/table-loading-rows'
 import type { PensionFundResponse } from '@/types/api'
 
 type FormValues = {
@@ -164,20 +165,8 @@ export default function PensionFundsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
-                  Caricamento…
-                </TableCell>
-              </TableRow>
-            ) : funds.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
-                  Nessun fondo pensione
-                </TableCell>
-              </TableRow>
-            ) : (
-              funds.map((f) => (
+            <TableLoadingRows loading={loading} empty={funds.length === 0} colSpan={5} emptyMessage="Nessun fondo pensione" />
+            {!loading && funds.map((f) => (
                 <TableRow key={f.id}>
                   <TableCell className="font-medium">
                     <Link to={`/pension-funds/${f.id}`} className="hover:underline">
@@ -211,8 +200,7 @@ export default function PensionFundsPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
+            ))}
           </TableBody>
         </Table>
       </div>

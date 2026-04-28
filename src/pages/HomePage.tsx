@@ -15,15 +15,14 @@ import {
 import { listHoldings } from '@/api/holdings'
 import { listPortfolios } from '@/api/portfolios'
 import { getPortfolioValueHistory } from '@/api/portfolioValueHistory'
-import { type ChartWindow, fmtCurrency, fmtNum, pnlColorClass, WINDOW_LABELS} from '@/lib/formatters'
+import { type ChartWindow, fmtCurrency, fmtNum, pnlColorClass } from '@/lib/formatters'
+import { ChartWindowPicker } from '@/components/chart-window-picker'
 import { ASSET_TYPE_LABELS, ASSET_TYPE_VARIANT, ASSET_TYPES } from '@/lib/assetTypes'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Combobox } from '@/components/ui/combobox'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
 import {
   Table,
   TableBody,
@@ -213,7 +212,7 @@ export default function HomePage() {
   const [hoveredPoint, setHoveredPoint] = useState<SnapshotPoint | null>(null)
 
   const [historyData, setHistoryData] = useState<PortfolioValueHistoryDetailResponse | null>(null)
-  const [historyWindow, setHistoryWindow] = useState<HistoryWindow>('month')
+  const [historyWindow, setChartWindow] = useState<ChartWindow>('month')
   const [historyLoading, setHistoryLoading] = useState(false)
   const [customFrom, setCustomFrom] = useState('')
   const [customTo, setCustomTo] = useState('')
@@ -256,15 +255,15 @@ export default function HomePage() {
 
   function handlePortfolioChange(val: string) {
     setPortfolioFilter(val)
-    setHistoryWindow('month')
+    setChartWindow('month')
     const pId = val ? Number(val) : undefined
     void fetchHoldings(pId)
     const { from, to } = getWindowDates('month')
     void fetchHistory(pId, from, to)
   }
 
-  function handleHistoryWindowChange(w: HistoryWindow) {
-    setHistoryWindow(w)
+  function handleChartWindowChange(w: ChartWindow) {
+    setChartWindow(w)
     if (w === 'custom') return
     const { from, to } = getWindowDates(w)
     void fetchHistory(portfolioFilter ? Number(portfolioFilter) : undefined, from, to)
@@ -343,47 +342,16 @@ export default function HomePage() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Andamento Portafoglio</CardTitle>
-          <div className="flex gap-1 mt-2 flex-wrap">
-            {(['week', 'month', 'year', 'ytd', 'alltime', 'custom'] as ChartWindow[]).map((w) => (
-              <Button
-                key={w}
-                variant={historyWindow === w ? 'default' : 'outline'}
-                size="xs"
-                disabled={historyLoading}
-                onClick={() => handleHistoryWindowChange(w)}
-              >
-                {WINDOW_LABELS[w]}
-              </Button>
-            ))}
-          </div>
-          {historyWindow === 'custom' && (
-            <>
-              <Separator className="mt-3" />
-              <div className="flex items-end gap-3 mt-3 flex-wrap">
-                <div className="space-y-1">
-                  <Label className="text-xs">Dal</Label>
-                  <Input
-                    type="date"
-                    value={customFrom}
-                    onChange={(e) => setCustomFrom(e.target.value)}
-                    className="h-8 w-36"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Al</Label>
-                  <Input
-                    type="date"
-                    value={customTo}
-                    onChange={(e) => setCustomTo(e.target.value)}
-                    className="h-8 w-36"
-                  />
-                </div>
-                <Button size="sm" onClick={() => void handleCustomHistorySearch()} disabled={historyLoading}>
-                  {historyLoading ? 'Caricamento…' : 'Cerca'}
-                </Button>
-              </div>
-            </>
-          )}
+          <ChartWindowPicker
+            window={historyWindow}
+            customLoading={historyLoading}
+            from={customFrom}
+            to={customTo}
+            onFromChange={setCustomFrom}
+            onToChange={setCustomTo}
+            onWindowChange={handleChartWindowChange}
+            onCustomSearch={handleCustomHistorySearch}
+          />
         </CardHeader>
         <CardContent>
           {historyLoading ? (

@@ -15,7 +15,9 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 import { getAssetDetail } from '@/api/assets'
 import { getHoldingsByAsset } from '@/api/holdings'
 import { ASSET_TYPE_LABELS, ASSET_TYPE_VARIANT } from '@/lib/assetTypes'
-import { type ChartWindow, fmtDate, formatPct, formatSignedAmount, formatSignedPct, pnlColorClass, TODAY, WINDOW_LABELS } from '@/lib/formatters'
+import { fmtDate, formatPct, formatSignedAmount, formatSignedPct, pnlColorClass, TODAY } from '@/lib/formatters'
+import { useChartWindow } from '@/hooks/useChartWindow'
+import { ChartWindowPicker } from '@/components/chart-window-picker'
 import { TRANSACTION_TYPE_LABELS, TRANSACTION_TYPE_VARIANT } from '@/lib/transactionTypes'
 import { InfoRow } from '@/components/ui/info-row'
 import { Badge } from '@/components/ui/badge'
@@ -28,7 +30,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type {
   AssetDetailResponse,
   AssetHoldingDetail,
-  AssetType,
   PricePoint,
   PriceType,
 } from '@/types/api'
@@ -130,18 +131,15 @@ export default function AssetDetailPage() {
   function toggleTransactions(holdingId: number) {
     setExpandedHoldings((prev) => {
       const next = new Set(prev)
-      next.has(holdingId) ? next.delete(holdingId) : next.add(holdingId)
+      if (next.has(holdingId)) { next.delete(holdingId) } else { next.add(holdingId) }
       return next
     })
   }
 
-  const [window, setWindow] = useState<ChartWindow>('month')
   const priceType: PriceType = 'ADJUSTED_CLOSE'
-  const [from, setFrom] = useState('')
-  const [to, setTo] = useState('')
-  const [customLoading, setCustomLoading] = useState(false)
   const [displayCurrency, setDisplayCurrency] = useState('EUR')
   const [currencyInput, setCurrencyInput] = useState('EUR')
+  const [currencyLoading, setCurrencyLoading] = useState(false)
 
   async function fetchDetail(opts?: { from?: string; to?: string; currency?: string }) {
     const currency = opts?.currency !== undefined ? opts.currency : displayCurrency
@@ -164,56 +162,34 @@ export default function AssetDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [assetId])
 
-  async function handleWindowChange(w: ChartWindow) {
-    setWindow(w)
-    if (w === 'ytd') {
-      const today = new Date()
-      const jan1 = `${today.getFullYear()}-01-01`
-      const todayStr = today.toISOString().slice(0, 10)
-      setCustomLoading(true)
-      try { await fetchDetail({ from: jan1, to: todayStr }) }
-      finally { setCustomLoading(false) }
-    } else if (w === 'alltime') {
-      const todayStr = new Date().toISOString().slice(0, 10)
-      setCustomLoading(true)
-      try { await fetchDetail({ from: '1900-01-01', to: todayStr }) }
-      finally { setCustomLoading(false) }
-    }
-  }
-
-  async function handleCustomSearch() {
-    if (!from || !to) {
-      toast.error('Inserisci entrambe le date')
-      return
-    }
-    setCustomLoading(true)
-    setWindow('custom')
-    try {
-      await fetchDetail({ from, to })
-    } finally {
-      setCustomLoading(false)
-    }
-  }
+  const {
+    window,
+    from, setFrom,
+    to, setTo,
+    customLoading,
+    handleWindowChange,
+    handleCustomSearch,
+  } = useChartWindow((from, to) => fetchDetail({ from, to }))
 
   async function handleCurrencyApply() {
     const newCurrency = currencyInput.trim().toUpperCase()
     setDisplayCurrency(newCurrency)
-    setCustomLoading(true)
+    setCurrencyLoading(true)
     try {
       await fetchDetail({ currency: newCurrency })
     } finally {
-      setCustomLoading(false)
+      setCurrencyLoading(false)
     }
   }
 
   async function handleCurrencyReset() {
     setCurrencyInput('')
     setDisplayCurrency('')
-    setCustomLoading(true)
+    setCurrencyLoading(true)
     try {
       await fetchDetail({ currency: '' })
     } finally {
-      setCustomLoading(false)
+      setCurrencyLoading(false)
     }
   }
 
@@ -579,61 +555,27 @@ export default function AssetDetailPage() {
                 className="h-7 w-16 text-xs font-mono uppercase px-2"
                 onKeyDown={(e) => { if (e.key === 'Enter') void handleCurrencyApply() }}
               />
-              <Button size="xs" variant="outline" onClick={() => void handleCurrencyApply()} disabled={customLoading}>
+              <Button size="xs" variant="outline" onClick={() => void handleCurrencyApply()} disabled={currencyLoading}>
                 Applica
               </Button>
               {displayCurrency && displayCurrency !== asset.currencyCode && (
-                <Button size="xs" variant="ghost" onClick={() => void handleCurrencyReset()} disabled={customLoading}>
+                <Button size="xs" variant="ghost" onClick={() => void handleCurrencyReset()} disabled={currencyLoading}>
                   ×
                 </Button>
               )}
             </div>
           </div>
 
-          {/* Window tabs */}
-          <div className="flex gap-1 mt-2 flex-wrap">
-            {(['week', 'month', 'year', 'ytd', 'alltime', 'custom'] as ChartWindow[]).map((w) => (
-              <Button
-                key={w}
-                variant={window === w ? 'default' : 'outline'}
-                size="xs"
-                disabled={customLoading}
-                onClick={() => void handleWindowChange(w)}
-              >
-                {WINDOW_LABELS[w]}
-              </Button>
-            ))}
-          </div>
-
-          {/* Custom date range */}
-          {window === 'custom' && (
-            <>
-              <Separator className="mt-3" />
-              <div className="flex items-end gap-3 mt-3 flex-wrap">
-                <div className="space-y-1">
-                  <Label className="text-xs">Dal</Label>
-                  <Input
-                    type="date"
-                    value={from}
-                    onChange={(e) => setFrom(e.target.value)}
-                    className="h-8 w-36"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Al</Label>
-                  <Input
-                    type="date"
-                    value={to}
-                    onChange={(e) => setTo(e.target.value)}
-                    className="h-8 w-36"
-                  />
-                </div>
-                <Button size="sm" onClick={() => void handleCustomSearch()} disabled={customLoading}>
-                  {customLoading ? 'Caricamento…' : 'Cerca'}
-                </Button>
-              </div>
-            </>
-          )}
+          <ChartWindowPicker
+            window={window}
+            customLoading={customLoading}
+            from={from}
+            to={to}
+            onFromChange={setFrom}
+            onToChange={setTo}
+            onWindowChange={handleWindowChange}
+            onCustomSearch={handleCustomSearch}
+          />
         </CardHeader>
         <CardContent>
           <PriceLineChart data={chartData} />

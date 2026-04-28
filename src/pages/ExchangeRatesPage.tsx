@@ -24,6 +24,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { TableLoadingRows } from '@/components/ui/table-loading-rows'
+import { PaginationControls } from '@/components/ui/pagination-controls'
 import type { CurrencyPairCreateRequest, CurrencyPairResponse } from '@/types/api'
 
 
@@ -174,20 +176,8 @@ export default function ExchangeRatesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
-                  Caricamento…
-                </TableCell>
-              </TableRow>
-            ) : pagedPairs.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
-                  Nessuna coppia trovata
-                </TableCell>
-              </TableRow>
-            ) : (
-              pagedPairs.map((pair) => (
+            <TableLoadingRows loading={loading} empty={pagedPairs.length === 0} colSpan={7} emptyMessage="Nessuna coppia trovata" />
+            {!loading && pagedPairs.map((pair) => (
                 <TableRow key={pair.id}>
                   <TableCell className="font-mono font-semibold">
                     {pair.baseCurrencyCode}/{pair.quoteCurrencyCode}
@@ -231,38 +221,13 @@ export default function ExchangeRatesPage() {
                     </Link>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
+            ))}
           </TableBody>
         </Table>
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            Pagina {page + 1} di {totalPages}
-          </span>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === 0}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              Precedente
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Successiva
-            </Button>
-          </div>
-        </div>
-      )}
+      <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
 
       {/* Create Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>

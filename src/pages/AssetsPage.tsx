@@ -28,6 +28,8 @@ import {
 } from '@/components/ui/table'
 import { buttonVariants } from '@/components/ui/button'
 import { Combobox } from '@/components/ui/combobox'
+import { TableLoadingRows } from '@/components/ui/table-loading-rows'
+import { PaginationControls } from '@/components/ui/pagination-controls'
 import type { AssetCreateRequest, AssetResponse, AssetType, CouponFrequency, SectorResponse } from '@/types/api'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -231,20 +233,8 @@ export default function AssetsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
-                  Caricamento…
-                </TableCell>
-              </TableRow>
-            ) : pagedAssets.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
-                  Nessun asset trovato
-                </TableCell>
-              </TableRow>
-            ) : (
-              pagedAssets.map((asset) => (
+            <TableLoadingRows loading={loading} empty={pagedAssets.length === 0} colSpan={9} emptyMessage="Nessun asset trovato" />
+            {!loading && pagedAssets.map((asset) => (
                 <TableRow key={asset.id}>
                   <TableCell className="font-mono font-medium">{asset.ticker ?? '—'}</TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">
@@ -304,8 +294,7 @@ export default function AssetsPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
+            ))}
           </TableBody>
         </Table>
       </div>
@@ -317,19 +306,7 @@ export default function AssetsPage() {
             ? `${filteredAssets.length} di ${allAssets.length} elementi`
             : `${allAssets.length} elementi`}
         </span>
-        {totalPages > 1 && (
-          <div className="flex items-center gap-3">
-            <span>Pagina {page + 1} di {totalPages}</span>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
-                Precedente
-              </Button>
-              <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>
-                Successiva
-              </Button>
-            </div>
-          </div>
-        )}
+        <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
 
       {/* Create Sheet */}
