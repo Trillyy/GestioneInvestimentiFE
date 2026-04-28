@@ -8,7 +8,7 @@ import {
   listPensionFunds,
   updatePensionFund,
 } from '@/api/pensionFunds'
-import { fmtDate, fmtNum } from '@/lib/formatters'
+import { fmtDate, fmtNum } from '@/helpers/formatters.ts'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'

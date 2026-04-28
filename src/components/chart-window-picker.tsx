@@ -1,4 +1,4 @@
-import { type ChartWindow, WINDOW_LABELS } from '@/lib/formatters'
+import { type ChartWindow, WINDOW_LABELS } from '@/helpers/formatters.ts'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'

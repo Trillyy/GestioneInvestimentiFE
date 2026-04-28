@@ -1,4 +1,4 @@
-import type { AssetType } from '@/types/api'
+import type { AssetType } from '@/types/api.ts'
 
 export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
   STOCK: 'Azione',

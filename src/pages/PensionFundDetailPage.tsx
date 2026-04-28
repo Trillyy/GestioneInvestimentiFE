@@ -17,7 +17,7 @@ import {
   listOperations,
   syncNav,
 } from '@/api/pensionFunds'
-import { type ChartWindow, fmtDate, fmtNum, pnlColorClass, WINDOW_LABELS } from '@/lib/formatters'
+import { type ChartWindow, fmtDate, fmtNum, pnlColorClass, WINDOW_LABELS } from '@/helpers/formatters.ts'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'

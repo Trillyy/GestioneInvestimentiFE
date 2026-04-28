@@ -122,6 +122,8 @@ Shadcn-style wrappers over `@base-ui/react`. Use `cn()` for class merging.
 ### Shared components (`src/components/`)
 
 - **`ChartWindowPicker`** — renders the window-selector tab row plus the custom date range inputs + "Cerca" button. Used in `AssetDetailPage`, `ExchangeRateDetailPage`, and `HomePage`. Pair with `useChartWindow` for the logic.
+- **`custom-line-chart`** — `CustomLineChart` wraps Recharts `LineChart`. Supports single or multiple series via `lines: LineSeriesConfig[]` (dataKey, name, color, connectNulls). Key props: `xKey`, `yAxisWidth`, `yAxisTickFormatter`, `tooltipValueFormatter`, `showLegend`, `showYear` (adds year to XAxis ticks), `computeDomain` (auto min/max with 5% padding), `domainPaddingFallback`, `emptyMessage`. Used in `AssetDetailPage`, `ExchangeRateDetailPage`, `PensionFundDetailPage`.
+- **`custom-pie-chart`** — `CustomPieChart` wraps Recharts `PieChart` inside a `Card`. Exports `ChartSlice` type (`{ name, value }`). Props: `data`, `title`, `unit` (`'%'` default or `'EUR'`), `height`, `outerRadius`. Returns `null` when data is empty. Used in `EtfHoldingsPage`, `PensionFundDetailPage`.
 
 ### Page patterns
 

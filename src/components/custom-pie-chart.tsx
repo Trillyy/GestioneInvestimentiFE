@@ -1,6 +1,6 @@
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { fmtNum } from '@/lib/formatters'
+import { fmtNum } from '@/helpers/formatters.ts'
 
 export interface ChartSlice {
   name: string

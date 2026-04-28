@@ -1,4 +1,4 @@
-import type { TransactionType } from '@/types/api'
+import type { TransactionType } from '@/types/api.ts'
 
 export const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
   BUY: 'Acquisto',

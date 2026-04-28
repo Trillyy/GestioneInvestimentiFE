@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
-import type { ChartWindow } from '@/lib/formatters'
+import type { ChartWindow } from '@/helpers/formatters.ts'
 
 export function useChartWindow(
   onFetch: (from: string, to: string) => Promise<void>,
