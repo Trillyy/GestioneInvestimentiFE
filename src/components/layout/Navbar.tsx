@@ -8,6 +8,7 @@ const navLinks = [
   { to: '/exchange-rates', label: 'Cambi' },
   { to: '/transactions', label: 'Transazioni' },
   { to: '/pension-funds', label: 'Fondi Pensione' },
+  { to: '/inps', label: 'INPS' },
 ]
 
 export default function Navbar() {

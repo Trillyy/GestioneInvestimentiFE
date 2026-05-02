@@ -9,6 +9,7 @@ import ExchangeRateDetailPage from '@/pages/ExchangeRateDetailPage'
 import TransactionsPage from '@/pages/TransactionsPage'
 import PensionFundsPage from '@/pages/PensionFundsPage'
 import PensionFundDetailPage from '@/pages/PensionFundDetailPage'
+import InpsPage from '@/pages/InpsPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 export const router = createBrowserRouter([
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
       { path: 'transactions', element: <TransactionsPage /> },
       { path: 'pension-funds', element: <PensionFundsPage /> },
       { path: 'pension-funds/:id', element: <PensionFundDetailPage /> },
+      { path: 'inps', element: <InpsPage /> },
     ],
   },
   { path: '*', element: <NotFoundPage /> },

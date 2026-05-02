@@ -417,6 +417,28 @@ export interface PensionFundHoldingUpdateRequest {
   returnPct?: number
 }
 
+// ─── INPS ─────────────────────────────────────────────────────────────────────
+
+export interface TassoCapitalizzazioneInpsResponse {
+  id: number
+  anno: number
+  tassoCapitalizzazione: number
+  tassoRivalutazione: number
+  note: string | null
+}
+
+export interface TassoCapitalizzazioneInpsRequest {
+  anno: number
+  tassoCapitalizzazione: number
+  note?: string
+}
+
+export interface TassoCapitalizzazioneInpsImportResult {
+  inserted: number
+  updated: number
+  skipped: number
+}
+
 // ─── ETF Holdings ─────────────────────────────────────────────────────────────
 
 export interface HoldingItem {
